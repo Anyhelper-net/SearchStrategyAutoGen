@@ -1,0 +1,15 @@
+*123.py
+*.log
+*test.py
+test*.py
+
+__pycache__
+.idea/
+dist/
+build/
+cfg/
+data/
+log/
+resource/
+test/
+save/
