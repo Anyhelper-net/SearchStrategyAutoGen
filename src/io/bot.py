@@ -19,3 +19,7 @@ def send(msg, chatbot_id):
         'prompt': msg,
         'chatbotID': chatbot_id,
     }, headers=BOT_HEADERS, timeout=HTTP_TIME_OUT_BOT)
+
+
+def parse(resp):
+    return resp.json()['choices'][0]['message']['content']
