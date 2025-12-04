@@ -24,8 +24,8 @@ class Generator:
         data = resp.json()
         msg = {
             'job_description': data['results'][0]['description'],
-            'summary1': data['results'][0]['summary'],
-            'summary2': data['results'][0]['name_summary'],
+            'summary': data['results'][0]['summary'],
+            # 'summary2': data['results'][0]['name_summary'],
             'comments': data['comments']
         }
         msg = json.dumps(msg)
