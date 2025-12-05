@@ -6,7 +6,7 @@
 """
 from dataclasses import dataclass
 from typing import List
-from src.model.priority import Priority
+from src.model.tier import Tier
 
 
 @dataclass
@@ -14,5 +14,5 @@ class KeywordsGroup:
     keywords: List[str]
     keywords_mapping: List[str]
     tp: str
-    priority: Priority
+    tier: Tier
     is_rare: bool

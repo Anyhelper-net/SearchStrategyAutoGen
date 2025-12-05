@@ -5,6 +5,8 @@
 @author  : duke
 """
 import json
+from enum import Enum
+
 from src.io.lp import UserProxy
 import src.io.bot as bot_io
 import src.io.anyhelper as ah_io
@@ -14,6 +16,10 @@ from src.model import *
 
 
 class Generator:
+    class PositionType(Enum):
+        SingleCore = '单核心岗位'
+        MutiCore = '多核心岗位'
+
     def __init__(self, cookies, pid):
         self.lp_io = UserProxy(cookies)
         self.pid = pid
@@ -22,6 +28,11 @@ class Generator:
         self.keywords_groups = None
         self.position_type = None
         self._parse_search_keywords_groups(data1)
+
+        self._parse_job_analysis(data1, data2)
+
+        self.hard_reqs = None
+        self._parse_hard_reqs(data1)
 
     def _get_position_info(self):
         resp1 = ah_io.get_position_info(self.pid)
@@ -42,7 +53,7 @@ class Generator:
         data = bot_io.parse(resp)
 
         lines = data.split('\n')
-        position_tp = PositionType(lines.pop()[5:])
+        position_tp = self.PositionType(lines.pop()[5:])
 
         groups: List[KeywordsGroup] = []
         for line in lines:
@@ -50,16 +61,16 @@ class Generator:
             keywords = vals[3].split()
             keywords_mapping = vals[5].split()
             tp = vals[1]
-            priority = Priority(vals[4], int(vals[0].replace(vals[4], '')))
+            tier = Tier(vals[4], int(vals[0].replace(vals[4], '')))
             is_rare = False if vals[6] == 'FALSE' else True
-            group = KeywordsGroup(keywords, keywords_mapping, tp, priority, is_rare)
+            group = KeywordsGroup(keywords, keywords_mapping, tp, tier, is_rare)
             groups.append(group)
 
         self.keywords_groups = groups
         self.position_type = position_tp
         # return groups, position_tp
 
-    def _parse_jobinfo(self, data1, data2):
+    def _parse_job_analysis(self, data1, data2):
         msg = {
             'job_description': data1['results'][0]['description'],
             'summary': data1['results'][0]['summary'],
@@ -69,8 +80,10 @@ class Generator:
         msg = json.dumps(msg)
         resp = bot_io.send(msg, ENUM_MODEL_ID.JOBINFO_PARSER)
         data = bot_io.parse(resp)
+        print(data)
 
         pass
 
     def _parse_hard_reqs(self, data):
-        pass
+        kwargs = {k: v for k, v in data['results'][0].items() if k in HardRequirements.__annotations__}
+        self.hard_reqs = HardRequirements(**kwargs)

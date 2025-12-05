@@ -7,5 +7,11 @@
 
 
 class SearchStrategy:
+    class Option:
+        pass
+
     def __init__(self):
         pass
+        # a_options = []
+        # b_options = []
+        # c_options = []
