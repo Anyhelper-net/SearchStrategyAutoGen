@@ -192,5 +192,16 @@ def update_resume(resume_id, status_tags=None):
     return requests.post(url, payload, timeout=HTTP_TIME_OUT_AH)
 
 
+@http_retry(HTTP_RETRY_TIMES, HTTP_RETRY_GAP)
+def get_position_info_2(position_id):
+    url = API_GET_POSITION_INFO_2
+
+    payload = {
+        'position_id': position_id,
+    }
+
+    return requests.post(url, payload, timeout=HTTP_TIME_OUT_AH)
+
+
 if __name__ == '__main__':
     pass

@@ -19,6 +19,7 @@ API_UPDATE_SCREENING_RESUME = 'https://talent.anyhelper.net/api/update_screening
 API_ADD_RESUME = 'https://talent.anyhelper.net/api/add-resume.php'
 API_GET_USER_ROLE = 'https://talent.anyhelper.net/api/get_user_role.php'
 API_UPDATE_RESUME = 'https://talent.anyhelper.net/api/update_resume_summary.php'
+API_GET_POSITION_INFO_2 = 'https://talent.anyhelper.net/api/get_jd_prompt.php'
 
 
 class ENUM_H5_AI_STATUS(Enum):

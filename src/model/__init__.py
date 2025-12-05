@@ -5,9 +5,8 @@
 @author  : duke
 """
 
-
-class SearchStrategy:
-    def __init__(self):
-        pass
-
-
+from hard_reqs import *
+from keywords_group import *
+from priority import *
+from strategy import *
+from classes import *
