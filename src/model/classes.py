@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import List
 
 
-class Tier(Enum):
+class AlphaTier(Enum):
     A = auto()
     B = auto()
     C = auto()

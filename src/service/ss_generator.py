@@ -10,7 +10,7 @@ import src.io.bot as bot_io
 import src.io.anyhelper as ah_io
 from src.config.bot import ENUM_MODEL_ID
 from typing import List
-from src.model.strategy import KeywordsGroup, Priority, PositionType
+from src.model import *
 
 
 class Generator:
