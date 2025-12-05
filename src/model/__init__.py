@@ -5,8 +5,8 @@
 @author  : duke
 """
 
-from hard_reqs import HardRequirements
-from keywords_group import KeywordsGroup
-from priority import Priority, PriorityType
-from strategy import SearchStrategy
-from classes import AlphaTier, PositionType
+from .hard_reqs import HardRequirements
+from .keywords_group import KeywordsGroup
+from .priority import Priority, PriorityType
+from .strategy import SearchStrategy
+from .classes import AlphaTier, PositionType
