@@ -9,3 +9,4 @@ from .hard_reqs import HardRequirements
 from .keywords_group import KeywordsGroup
 from .tier import Tier
 from .strategy import SearchStrategy
+from .job_analysis import Analysis

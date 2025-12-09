@@ -29,6 +29,7 @@ class Generator:
         self.position_type = None
         self._parse_search_keywords_groups(data1)
 
+        self.job_analysis = None
         self._parse_job_analysis(data1, data2)
 
         self.hard_reqs = None
@@ -80,9 +81,8 @@ class Generator:
         msg = json.dumps(msg)
         resp = bot_io.send(msg, ENUM_MODEL_ID.JOBINFO_PARSER)
         data = bot_io.parse(resp)
-        print(data)
-
-        pass
+        data = json.loads(data)
+        self.job_analysis = Analysis(**data)
 
     def _parse_hard_reqs(self, data):
         kwargs = {k: v for k, v in data['results'][0].items() if k in HardRequirements.__annotations__}

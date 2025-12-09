@@ -13,6 +13,6 @@ class Tier:
         Strong = 'Strong'
         Nice = 'Nice'
 
-    def __init__(self, tp: str, lv: int):
+    def __init__(self, tp: str, lv: int = 0):
         self.lv = lv
         self.tp = Tier.Type(tp)
