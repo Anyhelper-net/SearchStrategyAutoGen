@@ -8,7 +8,7 @@
 
 class HTTPException(RuntimeError):
     def __init__(self, resp):
-        super().__init__(f'code: {resp.status_code}, reason: {resp.reason}, text: {resp.text}')
+        super().__init__(f'url:{resp.url}\ncode: {resp.status_code}, reason: {resp.reason}, text: {resp.text}')
         self.resp = resp
 
 

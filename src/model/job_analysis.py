@@ -6,7 +6,7 @@
 """
 from dataclasses import dataclass
 from typing import Iterable
-from .tier import Tier
+from src.model.tier import Tier
 import json
 
 

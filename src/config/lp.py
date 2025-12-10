@@ -6,6 +6,20 @@
 """
 import re
 
+SALARY_MAX_ZOOM_FACTOR = 1.5
+
+LAN_CODE_DICT = {
+    '英文': '1',
+    '中文': '4',
+    '': '',
+}
+
+SEX_CODE_DICT = {
+    '男': '1',
+    '女': '0',
+    '': '',
+}
+
 API_LP_SEARCH_RESUMES = 'https://api-h.liepin.com/api/com.liepin.searchfront4r.h.search-resumes'
 API_LP_HOME = 'https://h.liepin.com/certification/home'
 
