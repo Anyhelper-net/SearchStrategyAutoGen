@@ -20,6 +20,7 @@ class UserProxy:
         self.cookies = cookies
         self.cookies_name_val_dict = {c['name']: c['value'] for c in cookies}
         self.client_id = None
+        self._get_client_id()
 
     def _get_headers(self):
         headers = deepcopy(TEMP_LP_HEADERS)
