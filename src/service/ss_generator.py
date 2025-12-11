@@ -6,13 +6,14 @@
 """
 import json
 from enum import Enum
-
+from src.config.lp import RangeTargetResumes
 from src.service.lp import LpService
 import src.io.bot as bot_io
 import src.io.anyhelper as ah_io
 from src.config.bot import ENUM_MODEL_ID
 from typing import List
 from src.model import *
+import copy
 
 
 class Generator:
@@ -30,6 +31,7 @@ class Generator:
         self.job_analysis: Analysis
         self.hard_reqs: HardRequirements
         self.strategy: SearchStrategy
+        self.trace: List[dict]
 
         self._parse_search_keywords_groups(data1)
         self._parse_job_analysis(data1, data2)
@@ -91,8 +93,13 @@ class Generator:
 
     def _set_default_strategy(self):
         self.strategy = SearchStrategy(self.hard_reqs, self.job_analysis)
+        self.trace = []
 
-    def bfs_strategy_company(self):
+    def _set_strategy_count(self):
+        self.strategy.count = self.lp_service.get_resume_count(self.strategy.get_lp_payload_inner())
+        # return self.strategy.count
+
+    def dfs_strategy_company(self):
         if self.job_analysis.company.type != '明确列出名字':
             return None
 
@@ -102,14 +109,71 @@ class Generator:
 
         pass
 
-    def bfs_strategy_cores(self):
+    def dfs_strategy_cores(self):
+        self._set_default_strategy()
+        self._set_strategy_count()
+
+        l, r = RangeTargetResumes.A.value
+
         if self.position_type is self.PositionType.SingleCore:
-            return self._bfs_strategy_cores_single()
-        else:
-            return self._bfs_strategy_cores_multi()
+            if self.strategy.count < l:
+                self._dfs_strategy_cores_single_zoom_out(self.strategy.all_keys)
+            elif self.strategy.count > r:
+                self._dfs_strategy_cores_single_zoom_in(self.strategy.all_keys[::-1])
+            else:
+                return
 
-    def _bfs_strategy_cores_single(self):
-        pass
+    def _dfs_strategy_cores_single_zoom_in(self, keys):
+        self._set_strategy_count()
+        backup = self.strategy.export()
+        self.trace.append(backup)
+        id = len(self.trace)
+        print(f'<{id}>: {json.dumps(backup)}\n')
 
-    def _bfs_strategy_cores_multi(self):
+        l, r = RangeTargetResumes.A.value
+        if self.strategy.count < l:
+            return False
+        if self.strategy.count < r:
+            return True
+
+        for key in keys:
+            self.strategy.load(backup)
+            try:
+                print(f'from <{id}> zoom <{key}> into <{self.strategy.zoom_in(key)}>\n')
+            except SearchStrategy.Option.ZoomException:
+                continue
+            next_keys = copy.copy(keys)
+            next_keys.remove(key)
+            if self._dfs_strategy_cores_single_zoom_in(next_keys):
+                return True
+
+        return False
+
+    def _dfs_strategy_cores_single_zoom_out(self, keys):
+        self._set_strategy_count()
+        backup = self.strategy.export()
+        self.trace.append(backup)
+        id = len(self.trace)
+        print(f'<{id}>: {json.dumps(backup)}\n')
+
+        l, r = RangeTargetResumes.A.value
+        if self.strategy.count > r:
+            return False
+        if self.strategy.count > l:
+            return True
+
+        for key in keys:
+            self.strategy.load(backup)
+            try:
+                print(f'from <{id}> zoom <{key}> into <{self.strategy.zoom_out(key)}>\n')
+            except SearchStrategy.Option.ZoomException:
+                continue
+            next_keys = copy.copy(keys)
+            next_keys.remove(key)
+            if self._dfs_strategy_cores_single_zoom_out(next_keys):
+                return True
+
+        return False
+
+    def _dfs_strategy_cores_multi(self):
         pass

@@ -26,22 +26,56 @@ class SearchStrategy:
             self.index += 1
             if self.index >= self.len:
                 self.index = self.len - 1
-                raise IndexError('cannot zoom out')
+                raise self.ZoomException('cannot zoom out')
             return self.value()
 
         def zoom_out(self):
             self.index -= 1
             if self.index < 0:
                 self.index = 0
-                raise IndexError('cannot zoom in')
+                raise self.ZoomException('cannot zoom in')
             return self.value()
 
         def value(self):
             return self.values[self.index]
 
+        class ZoomException(RuntimeError):
+            def __init__(self, *args, **kwargs):
+                super().__init__(args, kwargs)
+
+    def export(self):
+        r = {}
+        for k, v in self.a_options.items():
+            r[k] = v.index
+        for k, v in self.b_options.items():
+            r[k] = v.index
+        for k, v in self.c_options.items():
+            r[k] = v.index
+        for k, v in self.n_options.items():
+            r[k] = v.index
+        r['keywords'] = self.keywords
+        r['is_any_keywords'] = self.is_any_keywords
+        r['count'] = self.count
+        return r
+
+    def load(self, r):
+        for k in self.a_options:
+            self.a_options[k].index = r[k]
+        for k in self.b_options:
+            self.b_options[k].index = r[k]
+        for k in self.c_options:
+            self.c_options[k].index = r[k]
+        for k in self.n_options:
+            self.n_options[k].index = r[k]
+        self.keywords = r['keywords']
+        self.is_any_keywords = r['is_any_keywords']
+        self.count = r['count']
+
     def __init__(self, hard_reqs: HardRequirements, analysis: Analysis):
         with open(LP_DQS_CODE_PATH, 'r', encoding='utf-8') as f:
             self.lp_dqs_code_dict = json.load(f)
+
+        self.count = None
 
         a_options = dict[str: SearchStrategy.Option]()
         b_options = dict[str: SearchStrategy.Option]()
@@ -104,6 +138,9 @@ class SearchStrategy:
         self.n_options['industry'] = SearchStrategy.Option(('', analysis.industry.core),
                                                            0 if analysis.industry.core_tier.tp is Tier.Type.Nice else 1)
 
+        self.all_keys = list(self.a_options.keys()) + list(self.b_options.keys()) + list(self.c_options.keys()) + list(
+            self.n_options.keys())
+
     def get_lp_payload_inner(self):
         r = deepcopy(TEMP_LP_SEARCH_PARAMS_INPUT_VO)
         r['activeStatus'] = self.a_options['active_status'].value()
@@ -130,3 +167,29 @@ class SearchStrategy:
         r['anyKeyword'] = '1' if self.is_any_keywords else '0'
 
         return r
+
+    def _get_option(self, key):
+        try:
+            return self.a_options[key]
+        except KeyError:
+            pass
+        try:
+            return self.b_options[key]
+        except KeyError:
+            pass
+        try:
+            return self.c_options[key]
+        except KeyError:
+            pass
+        try:
+            return self.n_options[key]
+        except KeyError:
+            pass
+
+    def zoom_out(self, key):
+        option = self._get_option(key)
+        return option.zoom_out()
+
+    def zoom_in(self, key):
+        option = self._get_option(key)
+        return option.zoom_in()

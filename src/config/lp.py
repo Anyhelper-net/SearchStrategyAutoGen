@@ -6,12 +6,12 @@
 """
 import re
 import math
-import enum
+from enum import Enum
 
 SALARY_MAX_ZOOM_FACTOR = 1.5
 
 
-class RangeTargetResumes(enum):
+class RangeTargetResumes(Enum):
     A = (150, 250)
     B = (50, 150)
     C = (50, math.inf)
@@ -22,12 +22,14 @@ class Mapping:
         '英文': ['1'],
         '中文': ['4'],
         '': [],
+        '不限': [],
     }
 
     SEX_CODE_DICT = {
         '男': '1',
         '女': '0',
         '': '',
+        '不限': '',
     }
 
     EDU_LEVEL_CODE_DICT = {
