@@ -15,7 +15,7 @@ from src.utils.decorator import http_retry
 from src.config.http import HTTP_TIME_OUT_LP, HTTP_RETRY_GAP, HTTP_RETRY_TIMES
 
 
-class UserProxy:
+class LpUserProxy:
     def __init__(self, cookies):
         self.cookies = cookies
         self.cookies_name_val_dict = {c['name']: c['value'] for c in cookies}
@@ -52,7 +52,7 @@ class UserProxy:
             'logForm': {"ckId": str(uuid.uuid4()), "skId": '', "fkId": '', "searchScene": "refresh"},
             'version': 'V5',
         }
-        payload = [f'{key}={json.dumps(val)}' for key, val in payload.items()]
+        payload = [f'{key}={json.dumps(val, ensure_ascii=False)}' for key, val in payload.items()]
         payload = '&'.join(payload)
 
         return requests.post(API_LP_SEARCH_RESUMES, headers=self._get_headers(), cookies=self.cookies_name_val_dict,

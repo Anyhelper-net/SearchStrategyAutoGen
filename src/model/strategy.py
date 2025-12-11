@@ -10,7 +10,7 @@ from src.model.hard_reqs import HardRequirements
 from src.model.keywords_group import KeywordsGroup
 from src.model.job_analysis import Analysis
 from src.model.tier import Tier
-from src.config.lp import TEMP_LP_SEARCH_PARAMS_INPUT_VO, SALARY_MAX_ZOOM_FACTOR, LAN_CODE_DICT, SEX_CODE_DICT
+from src.config.lp import TEMP_LP_SEARCH_PARAMS_INPUT_VO, SALARY_MAX_ZOOM_FACTOR, Mapping
 from copy import deepcopy
 from src.config.path import LP_DQS_CODE_PATH
 
@@ -43,21 +43,27 @@ class SearchStrategy:
         with open(LP_DQS_CODE_PATH, 'r', encoding='utf-8') as f:
             self.lp_dqs_code_dict = json.load(f)
 
-        a_options = dict()[SearchStrategy.Option]
-        b_options = dict()[SearchStrategy.Option]
-        c_options = dict()[SearchStrategy.Option]
+        a_options = dict[str: SearchStrategy.Option]()
+        b_options = dict[str: SearchStrategy.Option]()
+        c_options = dict[str: SearchStrategy.Option]()
+        n_options = dict[str: SearchStrategy.Option]()
 
         self.a_options = a_options
         self.b_options = b_options
         self.c_options = c_options
+        self.n_options = n_options
 
+        # A
         a_options['active_status'] = SearchStrategy.Option(('07', '05', '04'), 1)
         a_options['position_name'] = SearchStrategy.Option(
             (analysis.position_name.core_titles, analysis.position_name.title_keywords), 1)
-        a_options['major'] = SearchStrategy.Option(([], analysis.major_reqs.keywords),
-                                                   0 if analysis.major_reqs.tier.tp is Tier.Type.Nice else 1)
+        if analysis.major_reqs.tier is None or analysis.major_reqs.tier.tp is Tier.Type.Nice:
+            a_options['major'] = SearchStrategy.Option(([], analysis.major_reqs.keywords), 0)
+        else:
+            a_options['major'] = SearchStrategy.Option(([], analysis.major_reqs.keywords), 1)
         a_options['stability'] = SearchStrategy.Option(('', '1'), 0)
 
+        # B
         b_options['city'] = SearchStrategy.Option(
             (analysis.location.nearby, analysis.location.default, analysis.location.best_cities), 1)
         if hard_reqs.salary_max is None:
@@ -71,6 +77,7 @@ class SearchStrategy:
             b_options['working_years_min'] = SearchStrategy.Option(
                 (hard_reqs.working_years_min - 2, hard_reqs.working_years_min), 1)
 
+        # C
         if hard_reqs.language:
             c_options['language'] = SearchStrategy.Option(('', hard_reqs.language), 0)
         else:
@@ -80,6 +87,22 @@ class SearchStrategy:
             c_options['sex'] = SearchStrategy.Option(('', hard_reqs.gender), 0)
         else:
             c_options['sex'] = SearchStrategy.Option(('',), 0)
+        if hard_reqs.academic_requirements == '硕士':
+            c_options['academic'] = SearchStrategy.Option(('本科', '硕士', '博士'), 1)
+        else:
+            c_options['academic'] = SearchStrategy.Option((hard_reqs.academic_requirements,), 0)
+        if hard_reqs.college_requirements == '无要求':
+            c_options['college'] = SearchStrategy.Option(('', '统招'), 0)
+        else:
+            c_options['college'] = SearchStrategy.Option(('', '统招', '985/211'), 1)
+
+        # E
+        self.keywords = ''
+        self.is_any_keywords = False
+
+        # N
+        self.n_options['industry'] = SearchStrategy.Option(('', analysis.industry.core),
+                                                           0 if analysis.industry.core_tier.tp is Tier.Type.Nice else 1)
 
     def get_lp_payload_inner(self):
         r = deepcopy(TEMP_LP_SEARCH_PARAMS_INPUT_VO)
@@ -89,9 +112,21 @@ class SearchStrategy:
         r['jobStability'] = self.a_options['stability'].value()
 
         r['wantDqs'] = ','.join(map(lambda x: self.lp_dqs_code_dict[x], self.b_options['city'].value()))
-        r['wantSalaryHigh'] = self.b_options['max_salary'].value()
-        r['workYearsLow'] = self.b_options['working_years_min'].value()
+        r['wantSalaryHigh'] = str(self.b_options['max_salary'].value())
+        r['workYearsLow'] = str(self.b_options['working_years_min'].value())
 
-        r['languageSkills'] = LAN_CODE_DICT[self.c_options['language'].value()]
-        r['ageHigh'] = self.c_options['max_age'].value()
-        r['sex'] = SEX_CODE_DICT[self.c_options['sex'].value()]
+        r['languageSkills'] = Mapping.LAN_CODE_DICT[self.c_options['language'].value()]
+        r['ageHigh'] = str(self.c_options['max_age'].value())
+        r['sex'] = Mapping.SEX_CODE_DICT[self.c_options['sex'].value()]
+        r['eduLevels'] = Mapping.EDU_LEVEL_CODE_DICT[self.c_options['academic'].value()]
+        if self.c_options['college'] == '':
+            pass
+        elif self.c_options['college'] == '985/211':
+            r['schoolKindList'] = ["1", "2"]
+        elif self.c_options['college'] == '统招':
+            r['eduLevelTzCode'] = r['eduLevels'][-1]
+
+        r['keyword'] = self.keywords
+        r['anyKeyword'] = '1' if self.is_any_keywords else '0'
+
+        return r

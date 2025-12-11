@@ -48,7 +48,9 @@ class Analysis:
         self.industry = Analysis.Industry(tmp['core_category'], Tier(tmp['core_category_tier']),
                                           tmp['detailed_category'], Tier(tmp['detailed_category_tier']))
         tmp = kwargs['TargetCompany']
-        self.company = Analysis.TargetComp(tmp['type'], tmp['companies'], Tier(tmp['tier']))
+        self.company = Analysis.TargetComp(tmp['type'],
+                                           tmp['companies'].split(',') if tmp['type'] == '明确列出名字' else [],
+                                           Tier(tmp['tier']))
 
         tmp = kwargs['TargetLocation']
         self.location = Analysis.Location(True if tmp['is_remote'] == 'true' else False, tmp['best_cities'].split(','),

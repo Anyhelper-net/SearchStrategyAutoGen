@@ -7,7 +7,7 @@
 import json
 from enum import Enum
 
-from src.io.lp import UserProxy
+from src.service.lp import LpService
 import src.io.bot as bot_io
 import src.io.anyhelper as ah_io
 from src.config.bot import ENUM_MODEL_ID
@@ -21,19 +21,20 @@ class Generator:
         MutiCore = '多核心岗位'
 
     def __init__(self, cookies, pid):
-        self.lp_io = UserProxy(cookies)
+        self.lp_service = LpService(cookies)
         self.pid = pid
         data1, data2 = self._get_position_info()
 
-        self.keywords_groups = None
-        self.position_type = None
+        self.keywords_groups: List[KeywordsGroup]
+        self.position_type: Generator.PositionType
+        self.job_analysis: Analysis
+        self.hard_reqs: HardRequirements
+        self.strategy: SearchStrategy
+
         self._parse_search_keywords_groups(data1)
-
-        self.job_analysis = None
         self._parse_job_analysis(data1, data2)
-
-        self.hard_reqs = None
         self._parse_hard_reqs(data1)
+        self._set_default_strategy()
 
     def _get_position_info(self):
         resp1 = ah_io.get_position_info(self.pid)
@@ -87,3 +88,28 @@ class Generator:
     def _parse_hard_reqs(self, data):
         kwargs = {k: v for k, v in data['results'][0].items() if k in HardRequirements.__annotations__}
         self.hard_reqs = HardRequirements(**kwargs)
+
+    def _set_default_strategy(self):
+        self.strategy = SearchStrategy(self.hard_reqs, self.job_analysis)
+
+    def bfs_strategy_company(self):
+        if self.job_analysis.company.type != '明确列出名字':
+            return None
+
+        self._set_default_strategy()
+        self.strategy.keywords = ' '.join(self.job_analysis.company.comps[:8])
+        self.strategy.is_any_keywords = False
+
+        pass
+
+    def bfs_strategy_cores(self):
+        if self.position_type is self.PositionType.SingleCore:
+            return self._bfs_strategy_cores_single()
+        else:
+            return self._bfs_strategy_cores_multi()
+
+    def _bfs_strategy_cores_single(self):
+        pass
+
+    def _bfs_strategy_cores_multi(self):
+        pass

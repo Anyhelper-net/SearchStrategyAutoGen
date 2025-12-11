@@ -5,20 +5,38 @@
 @author  : duke
 """
 import re
+import math
+import enum
 
 SALARY_MAX_ZOOM_FACTOR = 1.5
 
-LAN_CODE_DICT = {
-    '英文': '1',
-    '中文': '4',
-    '': '',
-}
 
-SEX_CODE_DICT = {
-    '男': '1',
-    '女': '0',
-    '': '',
-}
+class RangeTargetResumes(enum):
+    A = (150, 250)
+    B = (50, 150)
+    C = (50, math.inf)
+
+
+class Mapping:
+    LAN_CODE_DICT = {
+        '英文': ['1'],
+        '中文': ['4'],
+        '': [],
+    }
+
+    SEX_CODE_DICT = {
+        '男': '1',
+        '女': '0',
+        '': '',
+    }
+
+    EDU_LEVEL_CODE_DICT = {
+        "大专": ["040", "030", "010", "050"],
+        "本科": ["010", "030", "040"],
+        "硕士": ["010", "030"],
+        "博士": ["010"],
+    }
+
 
 API_LP_SEARCH_RESUMES = 'https://api-h.liepin.com/api/com.liepin.searchfront4r.h.search-resumes'
 API_LP_HOME = 'https://h.liepin.com/certification/home'
