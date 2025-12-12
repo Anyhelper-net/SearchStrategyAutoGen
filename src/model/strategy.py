@@ -45,46 +45,31 @@ class SearchStrategy:
     def export(self):
         r = {
             'count': self.count,
-            'keywords': self.keywords.index,
+            'comp_name': self.comp_name,
             'is_any_keywords': self.is_any_keywords,
         }
-        for k, v in self.a_options.items():
-            r[k] = v.index
-        for k, v in self.b_options.items():
-            r[k] = v.index
-        for k, v in self.c_options.items():
-            r[k] = v.index
-        for k, v in self.n_options.items():
-            r[k] = v.index
+        for options in self.all_options_dict.values():
+            for k, v in options.items():
+                r[k] = v.index
         return r
 
     def load(self, r):
-        for k in self.a_options:
-            self.a_options[k].index = r[k]
-        for k in self.b_options:
-            self.b_options[k].index = r[k]
-        for k in self.c_options:
-            self.c_options[k].index = r[k]
-        for k in self.n_options:
-            self.n_options[k].index = r[k]
-        self.keywords.index = r['keywords']
+        self.comp_name = r['comp_name']
         self.is_any_keywords = r['is_any_keywords']
         self.count = r['count']
+        for options in self.all_options_dict.values():
+            for k in options:
+                options[k].index = r[k]
 
     def __str__(self):
         r = {
             'count': self.count,
-            'keywords': self.keywords.value(),
+            'comp_name': self.comp_name,
             'is_any_keywords': self.is_any_keywords,
         }
-        for k, v in self.a_options.items():
-            r[k] = v.value()
-        for k, v in self.b_options.items():
-            r[k] = v.value()
-        for k, v in self.c_options.items():
-            r[k] = v.value()
-        for k, v in self.n_options.items():
-            r[k] = v.value()
+        for options in self.all_options_dict.values():
+            for k, v in options.items():
+                r[k] = v.value()
         return json.dumps(r, ensure_ascii=False)
 
     def __init__(self, hard_reqs: HardRequirements, analysis: Analysis):
@@ -96,14 +81,25 @@ class SearchStrategy:
         a_options = dict[str: SearchStrategy.Option]()
         b_options = dict[str: SearchStrategy.Option]()
         c_options = dict[str: SearchStrategy.Option]()
+        d_options = dict[str: SearchStrategy.Option]()
         e_options = dict[str: SearchStrategy.Option]()
         n_options = dict[str: SearchStrategy.Option]()
 
         self.a_options = a_options
         self.b_options = b_options
         self.c_options = c_options
+        self.d_options = d_options
         self.e_options = e_options
         self.n_options = n_options
+
+        self.all_options_dict = {
+            'A': a_options,
+            'B': b_options,
+            'C': c_options,
+            'D': d_options,
+            'E': e_options,
+            'N': n_options,
+        }
 
         # A
         a_options['active_status'] = SearchStrategy.Option(('07', '05', '04'), 1)
@@ -149,11 +145,12 @@ class SearchStrategy:
             c_options['college'] = SearchStrategy.Option(('', '统招', '985/211'), 1)
 
         # D
-        self.comp_name: SearchStrategy.Option = SearchStrategy.Option(('',), 0)
+        self.comp_name: str = ''
+        d_options['comp_period'] = SearchStrategy.Option(('0', '1'), 0)
 
         # E
-        self.keywords: SearchStrategy.Option = SearchStrategy.Option(('',), 0)
-        self.is_any_keywords = False
+        e_options['keywords'] = SearchStrategy.Option(('',), 0)
+        self.is_any_keywords: bool = False
 
         # N
         self.n_options['industry'] = SearchStrategy.Option(('', analysis.industry.core),
@@ -181,52 +178,28 @@ class SearchStrategy:
         elif self.c_options['college'] == '统招':
             r['eduLevelTzCode'] = r['eduLevels'][-1]
 
-        r['keyword'] = self.keywords.value()
+        r['compName'] = self.comp_name
+        r['compPeriod'] = self.d_options['comp_period'].value()
+
+        r['keyword'] = self.e_options['keywords'].value()
         r['anyKeyword'] = '1' if self.is_any_keywords else '0'
 
         return r
 
     def get_option_keys(self, s: str):
         r = []
-
         for c in s:
-            if c == 'A':
-                r += list(self.a_options.keys())
-            elif c == 'B':
-                r += list(self.b_options.keys())
-            elif c == 'C':
-                r += list(self.c_options.keys())
-            elif c == 'D':
-                r.append('comp_name')
-            elif c == 'E':
-                r.append('keywords')
-            elif c == 'N':
-                r += list(self.n_options.keys())
-
+            r += list(self.all_options_dict[c].keys())
         return r
 
     def _get_option(self, key):
-        if key == 'keywords':
-            return self.keywords
-        elif key == 'comp_name':
-            return self.comp_name
+        for options in self.all_options_dict.values():
+            try:
+                return options[key]
+            except KeyError:
+                pass
 
-        try:
-            return self.a_options[key]
-        except KeyError:
-            pass
-        try:
-            return self.b_options[key]
-        except KeyError:
-            pass
-        try:
-            return self.c_options[key]
-        except KeyError:
-            pass
-        try:
-            return self.n_options[key]
-        except KeyError:
-            pass
+        raise RuntimeError('unknown option key')
 
     def zoom_out(self, key):
         option = self._get_option(key)
@@ -235,3 +208,9 @@ class SearchStrategy:
     def zoom_in(self, key):
         option = self._get_option(key)
         return option.zoom_in()
+
+    def set_keywords(self, val: Option):
+        self.e_options['keywords'] = val
+
+    def set_comp_name(self, val: str):
+        self.comp_name = val

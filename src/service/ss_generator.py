@@ -106,17 +106,32 @@ class Generator:
             println('no target comp strategy')
             return
 
-        println('start cores strategy generation')
-        pass
+        println('start comps strategy generation')
+
+        self._set_default_strategy()
+        l, r = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
+
+        self.strategy.set_comp_name(' '.join(self.job_analysis.company.comps))
+
+        self._set_strategy_count()
+        is_zoom_in = self.strategy.count > r
+
+        keys = self.strategy.get_option_keys('DCBA' if is_zoom_in else 'DABC')
+
+        if not self._maxima_test(keys, is_zoom_in, l, r):
+            println('cant zoom into legal range')
+            return
+
+        self._dfs_strategy(keys, is_zoom_in, l, r)
 
     def dfs_strategy_cores(self):
-        println('start cores strategy generation\n')
+        println('start cores strategy generation')
 
         self._set_default_strategy()
         l, r = RangeTargetResumes.A.value
 
         if self.position_type is self.PositionType.SingleCore:
-            println('single core\n')
+            println('single core')
 
             keywords = []
             for group in self.keywords_groups:
@@ -125,7 +140,7 @@ class Generator:
                     keywords += group.keywords_mapping
             keywords = ' '.join(keywords)
             keywords = SearchStrategy.Option((keywords,), 0)
-            self.strategy.keywords = keywords
+            self.strategy.set_keywords(keywords)
             self.strategy.is_any_keywords = True
 
         # elif self.position_type is self.PositionType.MutiCore:
@@ -151,7 +166,7 @@ class Generator:
             keywords3 = ''.join(keywords3)
 
             keywords = SearchStrategy.Option((keywords1, keywords2, keywords3), 1)
-            self.strategy.keywords = keywords
+            self.strategy.set_keywords(keywords)
             self.strategy.is_any_keywords = False
 
         self._set_strategy_count()
