@@ -114,63 +114,84 @@ class Generator:
         self._set_strategy_count()
 
         l, r = RangeTargetResumes.A.value
+        is_zoom_in = self.strategy.count > r
 
         if self.position_type is self.PositionType.SingleCore:
-            if self.strategy.count < l:
-                self._dfs_strategy_cores_single_zoom_out(self.strategy.all_keys)
-            elif self.strategy.count > r:
-                self._dfs_strategy_cores_single_zoom_in(self.strategy.all_keys[::-1])
-            else:
+            keywords = []
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Must:
+                    keywords += group.keywords
+                    keywords += group.keywords_mapping
+            self.strategy.keywords = ' '.join(keywords)
+            self.strategy.is_any_keywords = True
+
+            if not self._maxima_test(is_zoom_in, l, r):
                 return
 
-    def _dfs_strategy_cores_single_zoom_in(self, keys):
+            self._dfs_strategy_cores_single(self.strategy.all_keys, is_zoom_in)
+
+        elif self.position_type is self.PositionType.MutiCore:
+            pass
+
+    def _maxima_test(self, is_zoom_in, l, r) -> bool:
+        backup = self.strategy.export()
+
+        if is_zoom_in:
+            for key in self.strategy.all_keys:
+                try:
+                    self.strategy.zoom_in(key)
+                except SearchStrategy.Option.ZoomException:
+                    pass
+        else:
+            for key in self.strategy.all_keys:
+                try:
+                    self.strategy.zoom_out(key)
+                except SearchStrategy.Option.ZoomException:
+                    pass
+
+        self._set_strategy_count()
+        res = None
+        if is_zoom_in:
+            res = self.strategy.count <= r
+        else:
+            res = self.strategy.count >= l
+
+        self.strategy.load(backup)
+
+        return res
+
+    def _dfs_strategy_cores_single(self, keys, is_zoom_in):
         self._set_strategy_count()
         backup = self.strategy.export()
         self.trace.append(backup)
         id = len(self.trace)
-        print(f'<{id}>: {json.dumps(backup)}\n')
+        print(f'<{id}>: {json.dumps(backup, ensure_ascii=False)}\n')
 
         l, r = RangeTargetResumes.A.value
-        if self.strategy.count < l:
-            return False
-        if self.strategy.count < r:
-            return True
-
-        for key in keys:
-            self.strategy.load(backup)
-            try:
-                print(f'from <{id}> zoom <{key}> into <{self.strategy.zoom_in(key)}>\n')
-            except SearchStrategy.Option.ZoomException:
-                continue
-            next_keys = copy.copy(keys)
-            next_keys.remove(key)
-            if self._dfs_strategy_cores_single_zoom_in(next_keys):
+        if is_zoom_in:
+            if self.strategy.count < l:
+                return False
+            if self.strategy.count < r:
+                return True
+        else:
+            if self.strategy.count > r:
+                return False
+            if self.strategy.count > l:
                 return True
 
-        return False
-
-    def _dfs_strategy_cores_single_zoom_out(self, keys):
-        self._set_strategy_count()
-        backup = self.strategy.export()
-        self.trace.append(backup)
-        id = len(self.trace)
-        print(f'<{id}>: {json.dumps(backup)}\n')
-
-        l, r = RangeTargetResumes.A.value
-        if self.strategy.count > r:
-            return False
-        if self.strategy.count > l:
-            return True
-
         for key in keys:
             self.strategy.load(backup)
             try:
-                print(f'from <{id}> zoom <{key}> into <{self.strategy.zoom_out(key)}>\n')
+                if is_zoom_in:
+                    print(f'from <{id}> zoom in <{key}> into <{self.strategy.zoom_in(key)}>\n')
+                else:
+                    print(f'from <{id}> zoom out <{key}> into <{self.strategy.zoom_out(key)}>\n')
             except SearchStrategy.Option.ZoomException:
                 continue
             next_keys = copy.copy(keys)
             next_keys.remove(key)
-            if self._dfs_strategy_cores_single_zoom_out(next_keys):
+
+            if self._dfs_strategy_cores_single(next_keys, is_zoom_in):
                 return True
 
         return False

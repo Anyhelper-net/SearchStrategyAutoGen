@@ -62,4 +62,4 @@ class Analysis:
 
         tmp = kwargs['MajorRequirements']
         self.major_reqs = Analysis.MajorReqs(None if tmp['Tier'] == 'None' else Tier(tmp['Tier']),
-                                             tmp['Keywords'].split(','))
+                                             [] if tmp['Keywords'] == '无' else tmp['Keywords'].split(','))

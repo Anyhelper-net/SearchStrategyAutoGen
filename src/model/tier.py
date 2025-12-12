@@ -16,3 +16,6 @@ class Tier:
     def __init__(self, tp: str, lv: int = 0):
         self.lv = lv
         self.tp = Tier.Type(tp)
+
+    def __str__(self):
+        return f'{self.Type.value}{self.lv}'
