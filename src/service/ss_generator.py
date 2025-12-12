@@ -15,6 +15,7 @@ from src.config.bot import ENUM_MODEL_ID
 from typing import List
 from src.model import *
 import copy
+from src.utils.method import random_sleep, println
 
 
 class Generator:
@@ -92,8 +93,8 @@ class Generator:
         kwargs = {k: v for k, v in data['results'][0].items() if k in HardRequirements.__annotations__}
         self.hard_reqs = HardRequirements(**kwargs)
 
-    def _set_default_strategy(self, keywords: SearchStrategy.Option):
-        self.strategy = SearchStrategy(self.hard_reqs, self.job_analysis, keywords)
+    def _set_default_strategy(self):
+        self.strategy = SearchStrategy(self.hard_reqs, self.job_analysis)
         self.trace = []
 
     def _set_strategy_count(self):
@@ -102,17 +103,20 @@ class Generator:
 
     def dfs_strategy_company(self):
         if self.job_analysis.company.type != '明确列出名字':
-            return None
+            println('no target comp strategy')
+            return
 
+        println('start cores strategy generation')
         pass
 
     def dfs_strategy_cores(self):
-        print('start cores strategy generation\n')
+        println('start cores strategy generation\n')
 
+        self._set_default_strategy()
         l, r = RangeTargetResumes.A.value
 
         if self.position_type is self.PositionType.SingleCore:
-            print('single core\n')
+            println('single core\n')
 
             keywords = []
             for group in self.keywords_groups:
@@ -121,12 +125,12 @@ class Generator:
                     keywords += group.keywords_mapping
             keywords = ' '.join(keywords)
             keywords = SearchStrategy.Option((keywords,), 0)
-            self._set_default_strategy(keywords)
+            self.strategy.keywords = keywords
             self.strategy.is_any_keywords = True
 
         # elif self.position_type is self.PositionType.MutiCore:
         else:
-            print('multiple cores\n')
+            println('multiple cores')
 
             keywords1 = []
             keywords2 = []
@@ -147,7 +151,7 @@ class Generator:
             keywords3 = ''.join(keywords3)
 
             keywords = SearchStrategy.Option((keywords1, keywords2, keywords3), 1)
-            self._set_default_strategy(keywords)
+            self.strategy.keywords = keywords
             self.strategy.is_any_keywords = False
 
         self._set_strategy_count()
@@ -159,7 +163,7 @@ class Generator:
             keys = self.strategy.get_option_keys('ECBA' if is_zoom_in else 'EABC')
 
         if not self._maxima_test(keys, is_zoom_in, l, r):
-            print('cant zoom into legal range\n')
+            println('cant zoom into legal range')
             return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
@@ -199,7 +203,7 @@ class Generator:
         backup = self.strategy.export()
         self.trace.append(backup)
         id = len(self.trace)
-        print(f'<{id}>: {self.strategy}\n')
+        println(f'<{id}>: {self.strategy}')
 
         if id > limitation:
             return True
@@ -219,9 +223,9 @@ class Generator:
             self.strategy.load(backup)
             try:
                 if is_zoom_in:
-                    print(f'from <{id}> zoom in <{key}> into <{self.strategy.zoom_in(key)}>\n')
+                    println(f'from <{id}> zoom in <{key}> into <{self.strategy.zoom_in(key)}>')
                 else:
-                    print(f'from <{id}> zoom out <{key}> into <{self.strategy.zoom_out(key)}>\n')
+                    println(f'from <{id}> zoom out <{key}> into <{self.strategy.zoom_out(key)}>')
             except SearchStrategy.Option.ZoomException:
                 continue
             next_keys = copy.copy(keys)

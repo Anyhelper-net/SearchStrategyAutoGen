@@ -7,7 +7,6 @@
 import json
 from typing import Sequence
 from src.model.hard_reqs import HardRequirements
-from src.model.keywords_group import KeywordsGroup
 from src.model.job_analysis import Analysis
 from src.model.tier import Tier
 from src.config.lp import TEMP_LP_SEARCH_PARAMS_INPUT_VO, SALARY_MAX_ZOOM_FACTOR, Mapping
@@ -88,7 +87,7 @@ class SearchStrategy:
             r[k] = v.value()
         return json.dumps(r, ensure_ascii=False)
 
-    def __init__(self, hard_reqs: HardRequirements, analysis: Analysis, keywords: Option):
+    def __init__(self, hard_reqs: HardRequirements, analysis: Analysis):
         with open(LP_DQS_CODE_PATH, 'r', encoding='utf-8') as f:
             self.lp_dqs_code_dict = json.load(f)
 
@@ -149,30 +148,16 @@ class SearchStrategy:
         else:
             c_options['college'] = SearchStrategy.Option(('', '统招', '985/211'), 1)
 
+        # D
+        self.comp_name: SearchStrategy.Option = SearchStrategy.Option(('',), 0)
+
         # E
-        self.keywords: SearchStrategy.Option = keywords
+        self.keywords: SearchStrategy.Option = SearchStrategy.Option(('',), 0)
         self.is_any_keywords = False
 
         # N
         self.n_options['industry'] = SearchStrategy.Option(('', analysis.industry.core),
                                                            0 if analysis.industry.core_tier.tp is Tier.Type.Nice else 1)
-
-    def get_option_keys(self, s: str):
-        r = []
-
-        for c in s:
-            if c == 'A':
-                r += list(self.a_options.keys())
-            elif c == 'B':
-                r += list(self.b_options.keys())
-            elif c == 'C':
-                r += list(self.c_options.keys())
-            elif c == 'E':
-                r.append('keywords')
-            elif c == 'N':
-                r += list(self.n_options.keys())
-
-        return r
 
     def get_lp_payload_inner(self):
         r = deepcopy(TEMP_LP_SEARCH_PARAMS_INPUT_VO)
@@ -201,9 +186,31 @@ class SearchStrategy:
 
         return r
 
+    def get_option_keys(self, s: str):
+        r = []
+
+        for c in s:
+            if c == 'A':
+                r += list(self.a_options.keys())
+            elif c == 'B':
+                r += list(self.b_options.keys())
+            elif c == 'C':
+                r += list(self.c_options.keys())
+            elif c == 'D':
+                r.append('comp_name')
+            elif c == 'E':
+                r.append('keywords')
+            elif c == 'N':
+                r += list(self.n_options.keys())
+
+        return r
+
     def _get_option(self, key):
         if key == 'keywords':
             return self.keywords
+        elif key == 'comp_name':
+            return self.comp_name
+
         try:
             return self.a_options[key]
         except KeyError:
