@@ -203,5 +203,18 @@ def get_position_info_2(position_id):
     return requests.post(url, payload, timeout=HTTP_TIME_OUT_AH)
 
 
+@http_retry(HTTP_RETRY_TIMES, HTTP_RETRY_GAP)
+def upload_search_strategy(position_id, name, data, source):
+    url = API_ADD_SEARCH_STRATEGY
+
+    payload = {
+        'position_id': position_id,
+        'name': name,
+        'strategy': data,
+        'source': source,
+    }
+
+    return requests.post(url, payload, timeout=HTTP_TIME_OUT_AH)
+
 if __name__ == '__main__':
     pass

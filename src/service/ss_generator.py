@@ -15,7 +15,7 @@ from src.config.bot import ENUM_MODEL_ID
 from typing import List
 from src.model import *
 import copy
-from src.utils.method import random_sleep, println
+from src.utils.method import random_sleep
 
 
 class Generator:
@@ -105,10 +105,10 @@ class Generator:
 
     def dfs_strategy_company(self):
         if self.job_analysis.company.type != '明确列出名字':
-            println('no target comp strategy')
+            print('no target comp strategy')
             return
 
-        println('start comps strategy generation')
+        print('start comps strategy generation')
 
         self._set_default_strategy()
         l, r = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
@@ -121,19 +121,19 @@ class Generator:
         keys = self.strategy.get_option_keys('DCBA' if is_zoom_in else 'DABC')
 
         if not self._maxima_test(keys, is_zoom_in, l, r):
-            println('cant zoom into legal range')
+            print('cant zoom into legal range')
             return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
     def dfs_strategy_cores(self):
-        println('start cores strategy generation')
+        print('start cores strategy generation')
 
         self._set_default_strategy()
         l, r = RangeTargetResumes.A.value
 
         if self.position_type is self.PositionType.SingleCore:
-            println('single core')
+            print('single core')
 
             keywords = []
             for group in self.keywords_groups:
@@ -147,7 +147,7 @@ class Generator:
 
         # elif self.position_type is self.PositionType.MutiCore:
         else:
-            println('multiple cores')
+            print('multiple cores')
 
             keywords1 = []
             keywords2 = []
@@ -180,7 +180,7 @@ class Generator:
             keys = self.strategy.get_option_keys('ECBA' if is_zoom_in else 'EABC')
 
         if not self._maxima_test(keys, is_zoom_in, l, r):
-            println('cant zoom into legal range')
+            print('cant zoom into legal range')
             return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
@@ -220,7 +220,7 @@ class Generator:
         backup = self.strategy.export()
         self.trace.append(backup)
         id = len(self.trace)
-        println(f'<{id}>: {self.strategy}')
+        print(f'<{id}>: {self.strategy}')
 
         if id > limitation:
             return True
@@ -240,9 +240,9 @@ class Generator:
             self.strategy.load(backup)
             try:
                 if is_zoom_in:
-                    println(f'from <{id}> zoom in <{key}> into <{self.strategy.zoom_in(key)}>')
+                    print(f'from <{id}> zoom in <{key}> into <{self.strategy.zoom_in(key)}>')
                 else:
-                    println(f'from <{id}> zoom out <{key}> into <{self.strategy.zoom_out(key)}>')
+                    print(f'from <{id}> zoom out <{key}> into <{self.strategy.zoom_out(key)}>')
             except SearchStrategy.Option.ZoomException:
                 continue
             next_keys = copy.copy(keys)
