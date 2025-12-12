@@ -5,6 +5,7 @@
 @author  : duke
 """
 import json
+import math
 from enum import Enum
 from src.config.lp import RangeTargetResumes
 from src.service.lp import LpService
@@ -193,12 +194,15 @@ class Generator:
 
         return res
 
-    def _dfs_strategy(self, keys, is_zoom_in, l, r) -> bool:
+    def _dfs_strategy(self, keys, is_zoom_in, l, r, limitation=math.inf) -> bool:
         self._set_strategy_count()
         backup = self.strategy.export()
         self.trace.append(backup)
         id = len(self.trace)
         print(f'<{id}>: {self.strategy}\n')
+
+        if id > limitation:
+            return True
 
         if is_zoom_in:
             if self.strategy.count < l:
