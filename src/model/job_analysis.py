@@ -50,7 +50,7 @@ class Analysis:
         tmp = kwargs['TargetCompany']
         self.company = Analysis.TargetComp(tmp['type'],
                                            tmp['companies'].split(',') if tmp['type'] == '明确列出名字' else [],
-                                           Tier(tmp['tier']))
+                                           None if tmp['Tier'] == '无' else Tier(tmp['Tier']))
 
         tmp = kwargs['TargetLocation']
         self.location = Analysis.Location(True if tmp['is_remote'] == 'true' else False, tmp['best_cities'].split(','),
