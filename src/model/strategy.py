@@ -44,7 +44,11 @@ class SearchStrategy:
                 super().__init__(args, kwargs)
 
     def export(self):
-        r = {}
+        r = {
+            'count': self.count,
+            'keywords': self.keywords.index,
+            'is_any_keywords': self.is_any_keywords,
+        }
         for k, v in self.a_options.items():
             r[k] = v.index
         for k, v in self.b_options.items():
@@ -53,9 +57,6 @@ class SearchStrategy:
             r[k] = v.index
         for k, v in self.n_options.items():
             r[k] = v.index
-        r['keywords'] = self.keywords
-        r['is_any_keywords'] = self.is_any_keywords
-        r['count'] = self.count
         return r
 
     def load(self, r):
@@ -67,11 +68,27 @@ class SearchStrategy:
             self.c_options[k].index = r[k]
         for k in self.n_options:
             self.n_options[k].index = r[k]
-        self.keywords = r['keywords']
+        self.keywords.index = r['keywords']
         self.is_any_keywords = r['is_any_keywords']
         self.count = r['count']
 
-    def __init__(self, hard_reqs: HardRequirements, analysis: Analysis):
+    def __str__(self):
+        r = {
+            'count': self.count,
+            'keywords': self.keywords.value(),
+            'is_any_keywords': self.is_any_keywords,
+        }
+        for k, v in self.a_options.items():
+            r[k] = v.value()
+        for k, v in self.b_options.items():
+            r[k] = v.value()
+        for k, v in self.c_options.items():
+            r[k] = v.value()
+        for k, v in self.n_options.items():
+            r[k] = v.value()
+        return json.dumps(r, ensure_ascii=False)
+
+    def __init__(self, hard_reqs: HardRequirements, analysis: Analysis, keywords: Option):
         with open(LP_DQS_CODE_PATH, 'r', encoding='utf-8') as f:
             self.lp_dqs_code_dict = json.load(f)
 
@@ -80,11 +97,13 @@ class SearchStrategy:
         a_options = dict[str: SearchStrategy.Option]()
         b_options = dict[str: SearchStrategy.Option]()
         c_options = dict[str: SearchStrategy.Option]()
+        e_options = dict[str: SearchStrategy.Option]()
         n_options = dict[str: SearchStrategy.Option]()
 
         self.a_options = a_options
         self.b_options = b_options
         self.c_options = c_options
+        self.e_options = e_options
         self.n_options = n_options
 
         # A
@@ -131,15 +150,29 @@ class SearchStrategy:
             c_options['college'] = SearchStrategy.Option(('', '统招', '985/211'), 1)
 
         # E
-        self.keywords = ''
+        self.keywords: SearchStrategy.Option = keywords
         self.is_any_keywords = False
 
         # N
         self.n_options['industry'] = SearchStrategy.Option(('', analysis.industry.core),
                                                            0 if analysis.industry.core_tier.tp is Tier.Type.Nice else 1)
 
-        self.all_keys = list(self.a_options.keys()) + list(self.b_options.keys()) + list(self.c_options.keys()) + list(
-            self.n_options.keys())
+    def get_option_keys(self, s: str):
+        r = []
+
+        for c in s:
+            if c == 'A':
+                r += list(self.a_options.keys())
+            elif c == 'B':
+                r += list(self.b_options.keys())
+            elif c == 'C':
+                r += list(self.c_options.keys())
+            elif c == 'E':
+                r.append('keywords')
+            elif c == 'N':
+                r += list(self.n_options.keys())
+
+        return r
 
     def get_lp_payload_inner(self):
         r = deepcopy(TEMP_LP_SEARCH_PARAMS_INPUT_VO)
@@ -163,12 +196,14 @@ class SearchStrategy:
         elif self.c_options['college'] == '统招':
             r['eduLevelTzCode'] = r['eduLevels'][-1]
 
-        r['keyword'] = self.keywords
+        r['keyword'] = self.keywords.value()
         r['anyKeyword'] = '1' if self.is_any_keywords else '0'
 
         return r
 
     def _get_option(self, key):
+        if key == 'keywords':
+            return self.keywords
         try:
             return self.a_options[key]
         except KeyError:

@@ -36,7 +36,7 @@ class Generator:
         self._parse_search_keywords_groups(data1)
         self._parse_job_analysis(data1, data2)
         self._parse_hard_reqs(data1)
-        self._set_default_strategy()
+        # self._set_default_strategy()
 
     def _get_position_info(self):
         resp1 = ah_io.get_position_info(self.pid)
@@ -91,8 +91,8 @@ class Generator:
         kwargs = {k: v for k, v in data['results'][0].items() if k in HardRequirements.__annotations__}
         self.hard_reqs = HardRequirements(**kwargs)
 
-    def _set_default_strategy(self):
-        self.strategy = SearchStrategy(self.hard_reqs, self.job_analysis)
+    def _set_default_strategy(self, keywords: SearchStrategy.Option):
+        self.strategy = SearchStrategy(self.hard_reqs, self.job_analysis, keywords)
         self.trace = []
 
     def _set_strategy_count(self):
@@ -103,47 +103,77 @@ class Generator:
         if self.job_analysis.company.type != '明确列出名字':
             return None
 
-        self._set_default_strategy()
-        self.strategy.keywords = ' '.join(self.job_analysis.company.comps[:8])
-        self.strategy.is_any_keywords = False
-
         pass
 
     def dfs_strategy_cores(self):
-        self._set_default_strategy()
-        self._set_strategy_count()
+        print('start cores strategy generation\n')
 
         l, r = RangeTargetResumes.A.value
-        is_zoom_in = self.strategy.count > r
 
         if self.position_type is self.PositionType.SingleCore:
+            print('single core\n')
+
             keywords = []
             for group in self.keywords_groups:
                 if group.tier.tp is Tier.Type.Must:
                     keywords += group.keywords
                     keywords += group.keywords_mapping
-            self.strategy.keywords = ' '.join(keywords)
+            keywords = ' '.join(keywords)
+            keywords = SearchStrategy.Option((keywords,), 0)
+            self._set_default_strategy(keywords)
             self.strategy.is_any_keywords = True
 
-            if not self._maxima_test(is_zoom_in, l, r):
-                return
+        # elif self.position_type is self.PositionType.MutiCore:
+        else:
+            print('multiple cores\n')
 
-            self._dfs_strategy_cores_single(self.strategy.all_keys, is_zoom_in)
+            keywords1 = []
+            keywords2 = []
+            keywords3 = []
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Must:
+                    keywords1 += group.keywords
+                    keywords2 += group.keywords
+                    keywords3 += group.keywords
+                elif group.tier.tp is Tier.Type.Strong:
+                    keywords2 += group.keywords
+                    keywords3 += group.keywords
+                elif group.tier.tp is Tier.Type.Nice:
+                    keywords3 += group.keywords
 
-        elif self.position_type is self.PositionType.MutiCore:
-            pass
+            keywords1 = ''.join(keywords1)
+            keywords2 = ''.join(keywords2)
+            keywords3 = ''.join(keywords3)
 
-    def _maxima_test(self, is_zoom_in, l, r) -> bool:
+            keywords = SearchStrategy.Option((keywords1, keywords2, keywords3), 1)
+            self._set_default_strategy(keywords)
+            self.strategy.is_any_keywords = False
+
+        self._set_strategy_count()
+        is_zoom_in = self.strategy.count > r
+
+        if self.position_type is self.PositionType.SingleCore:
+            keys = self.strategy.get_option_keys('CBA' if is_zoom_in else 'ABC')
+        else:
+            keys = self.strategy.get_option_keys('ECBA' if is_zoom_in else 'EABC')
+
+        if not self._maxima_test(keys, is_zoom_in, l, r):
+            print('cant zoom into legal range\n')
+            return
+
+        self._dfs_strategy(keys, is_zoom_in, l, r)
+
+    def _maxima_test(self, keys, is_zoom_in, l, r) -> bool:
         backup = self.strategy.export()
 
         if is_zoom_in:
-            for key in self.strategy.all_keys:
+            for key in keys:
                 try:
                     self.strategy.zoom_in(key)
                 except SearchStrategy.Option.ZoomException:
                     pass
         else:
-            for key in self.strategy.all_keys:
+            for key in keys:
                 try:
                     self.strategy.zoom_out(key)
                 except SearchStrategy.Option.ZoomException:
@@ -156,18 +186,20 @@ class Generator:
         else:
             res = self.strategy.count >= l
 
-        self.strategy.load(backup)
+        if res:
+            self.strategy.load(backup)
+        else:
+            self.trace.append(self.strategy.export())
 
         return res
 
-    def _dfs_strategy_cores_single(self, keys, is_zoom_in):
+    def _dfs_strategy(self, keys, is_zoom_in, l, r) -> bool:
         self._set_strategy_count()
         backup = self.strategy.export()
         self.trace.append(backup)
         id = len(self.trace)
-        print(f'<{id}>: {json.dumps(backup, ensure_ascii=False)}\n')
+        print(f'<{id}>: {self.strategy}\n')
 
-        l, r = RangeTargetResumes.A.value
         if is_zoom_in:
             if self.strategy.count < l:
                 return False
@@ -191,10 +223,7 @@ class Generator:
             next_keys = copy.copy(keys)
             next_keys.remove(key)
 
-            if self._dfs_strategy_cores_single(next_keys, is_zoom_in):
+            if self._dfs_strategy(next_keys, is_zoom_in, l, r):
                 return True
 
         return False
-
-    def _dfs_strategy_cores_multi(self):
-        pass
