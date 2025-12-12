@@ -61,5 +61,5 @@ class Analysis:
                                                    tmp['title_keywords'].split(','), tmp['core_titles'].split(','))
 
         tmp = kwargs['MajorRequirements']
-        self.major_reqs = Analysis.MajorReqs(None if tmp['Tier'] == 'None' else Tier(tmp['Tier']),
+        self.major_reqs = Analysis.MajorReqs(None if tmp['Tier'] == '无' else Tier(tmp['Tier']),
                                              [] if tmp['Keywords'] == '无' else tmp['Keywords'].split(','))

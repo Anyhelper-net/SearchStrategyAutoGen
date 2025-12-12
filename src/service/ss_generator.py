@@ -54,7 +54,7 @@ class Generator:
             # 'summary2': data['results'][0]['name_summary'],
             'comments': data['comments']
         }
-        msg = json.dumps(msg)
+        msg = json.dumps(msg, ensure_ascii=False)
         resp = bot_io.send(msg, ENUM_MODEL_ID.REQUIREMENT_PARSER)
         data = bot_io.parse(resp)
 
@@ -63,6 +63,8 @@ class Generator:
 
         groups: List[KeywordsGroup] = []
         for line in lines:
+            if not line:
+                continue
             vals = line.split('|')
             keywords = vals[3].split()
             keywords_mapping = vals[5].split()
@@ -83,7 +85,7 @@ class Generator:
             'comments': data1['comments'],
             'employer': data2['results'],
         }
-        msg = json.dumps(msg)
+        msg = json.dumps(msg, ensure_ascii=False)
         resp = bot_io.send(msg, ENUM_MODEL_ID.JOBINFO_PARSER)
         data = bot_io.parse(resp)
         data = json.loads(data)
@@ -161,9 +163,9 @@ class Generator:
                 elif group.tier.tp is Tier.Type.Nice:
                     keywords3 += group.keywords
 
-            keywords1 = ''.join(keywords1)
-            keywords2 = ''.join(keywords2)
-            keywords3 = ''.join(keywords3)
+            keywords1 = ' '.join(keywords1)
+            keywords2 = ' '.join(keywords2)
+            keywords3 = ' '.join(keywords3)
 
             keywords = SearchStrategy.Option((keywords1, keywords2, keywords3), 1)
             self.strategy.set_keywords(keywords)
