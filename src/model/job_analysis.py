@@ -50,7 +50,7 @@ class Analysis:
         tmp = kwargs['TargetCompany']
         self.company = Analysis.TargetComp(tmp['type'],
                                            tmp['companies'].split(',') if tmp['type'] == '明确列出名字' else [],
-                                           None if tmp['Tier'] == '无' else Tier(tmp['Tier']))
+                                           None if tmp['tier'] == '无' else Tier(tmp['tier']))
 
         tmp = kwargs['TargetLocation']
         self.location = Analysis.Location(True if tmp['is_remote'] == 'true' else False, tmp['best_cities'].split(','),
@@ -61,5 +61,5 @@ class Analysis:
                                                    tmp['title_keywords'].split(','), tmp['core_titles'].split(','))
 
         tmp = kwargs['MajorRequirements']
-        self.major_reqs = Analysis.MajorReqs(None if tmp['Tier'] == '无' else Tier(tmp['Tier']),
+        self.major_reqs = Analysis.MajorReqs(None if tmp['tier'] == '无' else Tier(tmp['tier']),
                                              [] if tmp['Keywords'] == '无' else tmp['Keywords'].split(','))

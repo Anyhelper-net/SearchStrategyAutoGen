@@ -25,7 +25,7 @@ class Generator:
         MutiCore = '多核心岗位'
 
     def __init__(self, cookies, pid):
-        logger.info('building generator...')
+        logger.info(f'building generator for pid:{pid}...')
 
         self.lp_service = LpService(cookies)
         self.pid = pid

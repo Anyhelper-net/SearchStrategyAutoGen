@@ -30,5 +30,6 @@ LOG_DIR = os.path.join(ROOT_PATH, 'log')
 RSC_DIR = os.path.join(ROOT_PATH, 'resource')
 
 LP_DQS_CODE_PATH = os.path.join(RSC_DIR, 'lp_dqs_code.json')
+LP_INDUSTRY_CODE_PATH = os.path.join(RSC_DIR, 'lp_industry_code.json')
 
 print(f'Root Path: {ROOT_PATH}\n')

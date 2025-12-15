@@ -73,8 +73,6 @@ class SearchStrategy:
         return json.dumps(r, ensure_ascii=False)
 
     def __init__(self, hard_reqs: HardRequirements, analysis: Analysis):
-        with open(LP_DQS_CODE_PATH, 'r', encoding='utf-8') as f:
-            self.lp_dqs_code_dict = json.load(f)
 
         self.count = None
 
@@ -163,7 +161,7 @@ class SearchStrategy:
         r['major'] = ' '.join(self.a_options['major'].value())
         r['jobStability'] = self.a_options['stability'].value()
 
-        r['wantDqs'] = ','.join(map(lambda x: self.lp_dqs_code_dict[x], self.b_options['city'].value()))
+        r['wantDqs'] = ','.join(map(lambda x: Mapping.DQS_CODE_DICT[x], self.b_options['city'].value()))
         r['wantSalaryHigh'] = str(self.b_options['max_salary'].value())
         r['workYearsLow'] = str(self.b_options['working_years_min'].value())
 

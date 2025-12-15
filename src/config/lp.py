@@ -4,9 +4,11 @@
 @time    : 2025/12/3 上午10:14
 @author  : duke
 """
+import json
 import re
 import math
 from enum import Enum
+from src.config.path import LP_DQS_CODE_PATH, LP_INDUSTRY_CODE_PATH
 
 SALARY_MAX_ZOOM_FACTOR = 1.5
 
@@ -39,6 +41,15 @@ class Mapping:
         "博士": ["010"],
     }
 
+    DQS_CODE_DICT = None
+    INDUSTRY_CODE_DICT = None
+
+
+with open(LP_DQS_CODE_PATH, 'r', encoding='utf-8') as f:
+    Mapping.DQS_CODE_DICT = json.load(f)
+
+with open(LP_INDUSTRY_CODE_PATH, 'r', encoding='utf=8') as f:
+    Mapping.INDUSTRY_CODE_DICT = json.load(f)
 
 API_LP_SEARCH_RESUMES = 'https://api-h.liepin.com/api/com.liepin.searchfront4r.h.search-resumes'
 API_LP_HOME = 'https://h.liepin.com/certification/home'
