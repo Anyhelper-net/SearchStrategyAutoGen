@@ -14,4 +14,13 @@ args = parser.parse_args()
 cfg.IS_PYCHARM = args.pycharm
 cfg.IS_DEV = args.dev
 
-from src.config.path import *
+from src import *
+
+if __name__ == '__main__':
+    app.run(
+        debug=False,  # 调试
+        host='0.0.0.0',  # ip
+        port=PORT,  # 端口
+        # ssl_context='adhoc',  # 默认SSL证书，实现https
+        threaded=True,  # 多线程
+    )

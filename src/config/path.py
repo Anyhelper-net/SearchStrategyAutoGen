@@ -15,8 +15,9 @@ LOG_DIR = None
 RSC_DIR = None
 
 if cfg.IS_PYCHARM:
-    # ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
-    ROOT_PATH = r'D:\Workspace\project\AnyHelper\SearchStrategyAutoGen'
+    ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+    ROOT_PATH = os.path.dirname(ROOT_PATH)
+    ROOT_PATH = os.path.dirname(ROOT_PATH)
 else:
     ROOT_PATH = os.path.dirname(os.path.abspath(sys.executable))
 
