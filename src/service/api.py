@@ -14,9 +14,9 @@ if not src.config.IS_DEV:
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 app = Flask(__name__,
-            static_folder=WEB_PATH,  # 设置静态文件夹目录
+            static_folder=WEB_PATH,
             template_folder=WEB_PATH,
-            static_url_path='')  # 设置vue编译输出目录dist文件夹，为Flask模板文件目录
+            static_url_path='')
 
 # @app.route('/')
 # def index():

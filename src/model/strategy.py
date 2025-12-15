@@ -182,6 +182,8 @@ class SearchStrategy:
         r['keyword'] = self.e_options['keywords'].value()
         r['anyKeyword'] = '1' if self.is_any_keywords else '0'
 
+        r['industrys'] = Mapping.INDUSTRY_CODE_DICT[self.n_options['industry'].value()]
+
         return r
 
     def get_option_keys(self, s: str):

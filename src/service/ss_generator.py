@@ -7,7 +7,7 @@
 import json
 import math
 from enum import Enum
-from src.config.lp import RangeTargetResumes
+from src.config.lp import RangeTargetResumes, DFS_STEP_MAX
 from src.service.lp import LpService
 import src.io.bot as bot_io
 import src.io.anyhelper as ah_io
@@ -17,6 +17,7 @@ from src.model import *
 import copy
 from src.utils.logger import logger
 from src.utils.method import random_sleep
+from src.io.anyhelper import upload_search_strategy
 
 
 class Generator:
@@ -25,7 +26,9 @@ class Generator:
         MutiCore = '多核心岗位'
 
     def __init__(self, cookies, pid):
-        logger.info(f'building generator for pid:{pid}...')
+        self.logger = logger.getChild('strategy_generator')
+
+        self.logger.info(f'building generator for pid:{pid}...')
 
         self.lp_service = LpService(cookies)
         self.pid = pid
@@ -108,10 +111,10 @@ class Generator:
 
     def dfs_strategy_company(self):
         if self.job_analysis.company.type != '明确列出名字':
-            logger.info('no target comp strategy')
+            self.logger.info('no target comp strategy')
             return
 
-        logger.info('start comps strategy generation')
+        self.logger.info('start comps strategy generation')
 
         self._set_default_strategy()
         l, r = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
@@ -124,19 +127,19 @@ class Generator:
         keys = self.strategy.get_option_keys('DCBA' if is_zoom_in else 'DABC')
 
         if not self._maxima_test(keys, is_zoom_in, l, r):
-            logger.info('cant zoom into legal range')
+            self.logger.info('cant zoom into legal range')
             return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
     def dfs_strategy_cores(self):
-        logger.info('start cores strategy generation')
+        self.logger.info('start cores strategy generation')
 
         self._set_default_strategy()
         l, r = RangeTargetResumes.A.value
 
         if self.position_type is self.PositionType.SingleCore:
-            logger.info('single core')
+            self.logger.info('single core')
 
             keywords = []
             for group in self.keywords_groups:
@@ -150,7 +153,7 @@ class Generator:
 
         # elif self.position_type is self.PositionType.MutiCore:
         else:
-            logger.info('multiple cores')
+            self.logger.info('multiple cores')
 
             keywords1 = []
             keywords2 = []
@@ -183,7 +186,7 @@ class Generator:
             keys = self.strategy.get_option_keys('ECBA' if is_zoom_in else 'EABC')
 
         if not self._maxima_test(keys, is_zoom_in, l, r):
-            logger.info('cant zoom into legal range')
+            self.logger.info('cant zoom into legal range')
             return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
@@ -218,12 +221,12 @@ class Generator:
 
         return res
 
-    def _dfs_strategy(self, keys, is_zoom_in, l, r, limitation=math.inf) -> bool:
+    def _dfs_strategy(self, keys, is_zoom_in, l, r, limitation=DFS_STEP_MAX) -> bool:
         self._set_strategy_count()
         backup = self.strategy.export()
         self.trace.append(backup)
         id = len(self.trace)
-        logger.info(f'<{id}>: {self.strategy}')
+        self.logger.info(f'<{id}>: {self.strategy}')
 
         if id > limitation:
             return True
@@ -243,9 +246,9 @@ class Generator:
             self.strategy.load(backup)
             try:
                 if is_zoom_in:
-                    logger.info(f'from <{id}> zoom in <{key}> into <{self.strategy.zoom_in(key)}>')
+                    self.logger.info(f'from <{id}> zoom in <{key}> into <{self.strategy.zoom_in(key)}>')
                 else:
-                    logger.info(f'from <{id}> zoom out <{key}> into <{self.strategy.zoom_out(key)}>')
+                    self.logger.info(f'from <{id}> zoom out <{key}> into <{self.strategy.zoom_out(key)}>')
             except SearchStrategy.Option.ZoomException:
                 continue
             next_keys = copy.copy(keys)
@@ -255,3 +258,20 @@ class Generator:
                 return True
 
         return False
+
+    def run(self):
+        self.dfs_strategy_cores()
+        resp = upload_search_strategy(self.pid, f'{self.strategy.count}_cores',
+                                      json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False), 'liepin')
+        if resp.ok:
+            self.logger.info(f'strategy uploaded: {self.strategy}')
+
+        if self.job_analysis.company.type == '明确列出名字':
+            self.dfs_strategy_company()
+            resp = upload_search_strategy(self.pid, f'{self.strategy.count}_cores',
+                                          json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False),
+                                          'liepin')
+            if resp.ok:
+                self.logger.info(f'strategy uploaded: {self.strategy}')
+        else:
+            self.logger.info('no target comp strategy')

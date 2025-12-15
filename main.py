@@ -17,10 +17,13 @@ cfg.IS_DEV = args.dev
 from src import *
 
 if __name__ == '__main__':
-    app.run(
-        debug=False,  # 调试
-        host='0.0.0.0',  # ip
-        port=PORT,  # 端口
-        # ssl_context='adhoc',  # 默认SSL证书，实现https
-        threaded=True,  # 多线程
-    )
+    client = Client()
+    client.ws.run_forever()
+
+    # app.run(
+    #     debug=False,
+    #     host='0.0.0.0',
+    #     port=23332,
+    #     # ssl_context='adhoc',
+    #     threaded=True,
+    # )
