@@ -57,6 +57,8 @@ class Client:
             with self.lck:
                 pid = int(data['payload']['positionID'])
                 lp_cookies = data['payload']['cookies']['liepin']['value']
+                mm_cookies = data['payload']['cookies']['maimai']['value']
+
                 try:
                     generator = Generator(lp_cookies, pid)
                     generator.run()
@@ -68,6 +70,9 @@ class Client:
                         raise
                     else:
                         traceback.print_exc()
+
+                # add helpers here
+                
         else:
             self.logger.info(msg)
 
