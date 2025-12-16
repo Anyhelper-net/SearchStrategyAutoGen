@@ -229,6 +229,8 @@ class Generator:
         self.logger.info(f'<{id}>: {self.strategy}')
 
         if id > limitation:
+            tmp = min(self.trace, key=lambda x:abs(x['count']-(l+r)//2))
+            self.strategy.load(tmp)
             return True
 
         if is_zoom_in:

@@ -23,15 +23,17 @@ console_handler.setLevel(logging.INFO)
 # 按时间轮转的Handler
 timed_handler = TimedRotatingFileHandler(
     os.path.join(LOG_DIR, 'app.log'),
-    when='midnight',  # 每天轮转
+    when='midnight',
     interval=1,
-    backupCount=7
+    backupCount=7,
+    encoding='utf-8'
 )
 timed_handler.setLevel(logging.DEBUG)
 
 # 创建formatter
 formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(message)s')
 console_handler.setFormatter(formatter)
+timed_handler.setFormatter(formatter)
 
 # 添加handler到logger
 logger.addHandler(console_handler)
