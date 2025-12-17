@@ -72,7 +72,7 @@ class Client:
                         traceback.print_exc()
 
                 # add helpers here
-                
+
         else:
             self.logger.info(msg)
 

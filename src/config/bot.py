@@ -12,6 +12,7 @@ API_MODELS = 'https://chat.anyhelper.net/api/completions/quora.php'
 class ENUM_MODEL_ID(Enum):
     REQUIREMENT_PARSER = 'V2JRaTJWUU5IR3ZKSG9HQnZHNDFQUT09'
     JOBINFO_PARSER = 'WURTVkZEbStwT1A4OEhzdVJWNC9Pdz09'
+    STRATEGY_NAME_GEN = 'c2tNWDlmRGwwbWduMjNETy95alRzZz09'
 
 
 BOT_HEADERS = {

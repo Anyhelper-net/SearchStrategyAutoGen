@@ -229,7 +229,7 @@ class Generator:
         self.logger.info(f'<{id}>: {self.strategy}')
 
         if id > limitation:
-            tmp = min(self.trace, key=lambda x:abs(x['count']-(l+r)//2))
+            tmp = min(self.trace, key=lambda x: abs(x['count'] - r))
             self.strategy.load(tmp)
             return True
 
@@ -263,14 +263,18 @@ class Generator:
 
     def run(self):
         self.dfs_strategy_cores()
-        resp = upload_search_strategy(self.pid, f'{self.strategy.count}_cores',
+        resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
+        data = bot_io.parse(resp)
+        resp = upload_search_strategy(self.pid, f'{self.strategy.count}_cores_{data}',
                                       json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False), 'liepin')
         if resp.ok:
             self.logger.info(f'strategy uploaded: {self.strategy}')
 
         if self.job_analysis.company.type == '明确列出名字':
             self.dfs_strategy_company()
-            resp = upload_search_strategy(self.pid, f'{self.strategy.count}_cores',
+            resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
+            data = bot_io.parse(resp)
+            resp = upload_search_strategy(self.pid, f'{self.strategy.count}_company_{data}',
                                           json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False),
                                           'liepin')
             if resp.ok:
