@@ -43,15 +43,15 @@ class Mapping:
         "博士": ["010"],
     }
 
-    DQS_CODE_DICT = None
-    INDUSTRY_CODE_DICT = None
+    DQS_CODE_DICT = {'': ''}
+    INDUSTRY_CODE_DICT = {'': ''}
 
 
 with open(LP_DQS_CODE_PATH, 'r', encoding='utf-8') as f:
-    Mapping.DQS_CODE_DICT = json.load(f)
+    Mapping.DQS_CODE_DICT.update(json.load(f))
 
 with open(LP_INDUSTRY_CODE_PATH, 'r', encoding='utf=8') as f:
-    Mapping.INDUSTRY_CODE_DICT = json.load(f)
+    Mapping.INDUSTRY_CODE_DICT.update(json.load(f))
 
 API_LP_SEARCH_RESUMES = 'https://api-h.liepin.com/api/com.liepin.searchfront4r.h.search-resumes'
 API_LP_HOME = 'https://h.liepin.com/certification/home'

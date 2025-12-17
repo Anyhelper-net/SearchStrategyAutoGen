@@ -75,6 +75,7 @@ class SearchStrategy:
     def __init__(self, hard_reqs: HardRequirements, analysis: Analysis):
 
         self.count = None
+        self.r_limit = None
 
         a_options = dict[str: SearchStrategy.Option]()
         b_options = dict[str: SearchStrategy.Option]()
@@ -203,11 +204,13 @@ class SearchStrategy:
 
     def zoom_out(self, key):
         option = self._get_option(key)
-        return option.zoom_out()
+        before = option.value()
+        return before, option.zoom_out()
 
     def zoom_in(self, key):
         option = self._get_option(key)
-        return option.zoom_in()
+        before = option.value()
+        return before, option.zoom_in()
 
     def set_keywords(self, val: Option):
         self.e_options['keywords'] = val

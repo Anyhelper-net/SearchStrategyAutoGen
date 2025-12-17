@@ -101,8 +101,9 @@ class Generator:
         kwargs = {k: v for k, v in data['results'][0].items() if k in HardRequirements.__annotations__}
         self.hard_reqs = HardRequirements(**kwargs)
 
-    def _set_default_strategy(self):
+    def _set_default_strategy(self, r_limit):
         self.strategy = SearchStrategy(self.hard_reqs, self.job_analysis)
+        self.strategy.r_limit = r_limit
         self.trace = []
 
     def _set_strategy_count(self):
@@ -116,8 +117,8 @@ class Generator:
 
         self.logger.info('start comps strategy generation')
 
-        self._set_default_strategy()
         l, r = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
+        self._set_default_strategy(r)
 
         self.strategy.set_comp_name(' '.join(self.job_analysis.company.comps))
 
@@ -135,8 +136,8 @@ class Generator:
     def dfs_strategy_cores(self):
         self.logger.info('start cores strategy generation')
 
-        self._set_default_strategy()
         l, r = RangeTargetResumes.A.value
+        self._set_default_strategy(r)
 
         if self.position_type is self.PositionType.SingleCore:
             self.logger.info('single core')
@@ -181,9 +182,75 @@ class Generator:
         is_zoom_in = self.strategy.count > r
 
         if self.position_type is self.PositionType.SingleCore:
-            keys = self.strategy.get_option_keys('CBA' if is_zoom_in else 'ABC')
+            keys = self.strategy.get_option_keys('CBA' if is_zoom_in else 'ABCN')
         else:
-            keys = self.strategy.get_option_keys('ECBA' if is_zoom_in else 'EABC')
+            keys = self.strategy.get_option_keys('ECBA' if is_zoom_in else 'EABCN')
+
+        if not self._maxima_test(keys, is_zoom_in, l, r):
+            self.logger.info('cant zoom into legal range')
+            return
+
+        self._dfs_strategy(keys, is_zoom_in, l, r)
+
+    def _dfs_strategy_rares_B(self):
+        self.logger.info('start rares strategy B generation')
+
+        l, r = RangeTargetResumes.B.value
+        self._set_default_strategy(r)
+
+        if self.position_type is self.PositionType.SingleCore:
+            self.logger.info('single core')
+
+            keywords1 = []
+            keywords2 = []
+            keywords3 = []
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Must and group.tier.lv == 1:
+                    keywords1 += group.keywords
+                    break
+
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Nice and group.tier.lv == 1:
+                    keywords1 += group.keywords
+                    keywords2 += group.keywords
+                    break
+
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Must or group.tier.tp is Tier.Type.Strong:
+                    keywords2 += group.keywords
+                    keywords3 += group.keywords
+
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Nice:
+                    keywords3 += group.keywords
+            keywords1 = ' '.join(keywords1)
+            keywords2 = ' '.join(keywords2)
+            keywords3 = ' '.join(keywords3)
+
+            keywords = SearchStrategy.Option((keywords1, keywords2, keywords3), 1)
+            self.strategy.set_keywords(keywords)
+            self.strategy.is_any_keywords = False
+        else:
+            self.logger.info('multiple cores')
+
+            keywords = []
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Must or group.tier.tp is Tier.Type.Strong:
+                    keywords += group.keywords
+                    keywords += group.keywords_mapping
+            keywords = ' '.join(keywords)
+
+            keywords = SearchStrategy.Option((keywords,), 0)
+            self.strategy.set_keywords(keywords)
+            self.strategy.is_any_keywords = True
+
+        self._set_strategy_count()
+        is_zoom_in = self.strategy.count > r
+
+        if self.position_type is self.PositionType.SingleCore:
+            keys = self.strategy.get_option_keys('ECBA' if is_zoom_in else 'EABCN')
+        else:
+            keys = self.strategy.get_option_keys('CBA' if is_zoom_in else 'ABCN')
 
         if not self._maxima_test(keys, is_zoom_in, l, r):
             self.logger.info('cant zoom into legal range')
@@ -248,9 +315,11 @@ class Generator:
             self.strategy.load(backup)
             try:
                 if is_zoom_in:
-                    self.logger.info(f'from <{id}> zoom in <{key}> into <{self.strategy.zoom_in(key)}>')
+                    before, after = self.strategy.zoom_in(key)
+                    self.logger.info(f'based on <{id}> zoom in <{key}> from <{before}> into <{after}>')
                 else:
-                    self.logger.info(f'from <{id}> zoom out <{key}> into <{self.strategy.zoom_out(key)}>')
+                    before, after = self.strategy.zoom_out(key)
+                    self.logger.info(f'based on <{id}> zoom out <{key}> from <{before}> into <{after}>')
             except SearchStrategy.Option.ZoomException:
                 continue
             next_keys = copy.copy(keys)
@@ -262,22 +331,33 @@ class Generator:
         return False
 
     def run(self):
+        # cores strategy
         self.dfs_strategy_cores()
         resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
         data = bot_io.parse(resp)
-        resp = upload_search_strategy(self.pid, f'{self.strategy.count}_cores_{data}',
+        resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_cores_{data}',
                                       json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False), 'liepin')
         if resp.ok:
             self.logger.info(f'strategy uploaded: {self.strategy}')
 
+        # company strategy
         if self.job_analysis.company.type == '明确列出名字':
             self.dfs_strategy_company()
             resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
             data = bot_io.parse(resp)
-            resp = upload_search_strategy(self.pid, f'{self.strategy.count}_company_{data}',
+            resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_company_{data}',
                                           json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False),
                                           'liepin')
             if resp.ok:
                 self.logger.info(f'strategy uploaded: {self.strategy}')
         else:
             self.logger.info('no target comp strategy')
+
+        # rares strategy
+        self._dfs_strategy_rares_B()
+        resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
+        data = bot_io.parse(resp)
+        resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
+                                      json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False), 'liepin')
+        if resp.ok:
+            self.logger.info(f'strategy uploaded: {self.strategy}')
