@@ -253,7 +253,7 @@ class Generator:
             keys = self.strategy.get_option_keys('CBA' if is_zoom_in else 'ABCN')
 
         if not self._maxima_test(keys, is_zoom_in, l, r):
-            self.logger.info('cant zoom into legal range')
+            self.logger.warn('cant zoom into legal range')
             return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
@@ -351,7 +351,7 @@ class Generator:
             if resp.ok:
                 self.logger.info(f'strategy uploaded: {self.strategy}')
         else:
-            self.logger.info('no target comp strategy')
+            self.logger.warn('no target comp strategy')
 
         # rares strategy
         self._dfs_strategy_rares_B()
