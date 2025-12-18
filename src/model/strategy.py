@@ -162,7 +162,8 @@ class SearchStrategy:
         r['major'] = ' '.join(self.a_options['major'].value())
         r['jobStability'] = self.a_options['stability'].value()
 
-        r['wantDqs'] = ','.join(map(lambda x: Mapping.DQS_CODE_DICT[x], self.b_options['city'].value()))
+        # r['wantDqs'] = ','.join(map(lambda x: Mapping.DQS_CODE_DICT[x], self.b_options['city'].value()))
+        r['wantDqs'] = ','.join([Mapping.DQS_CODE_DICT[x] for x in self.b_options['city'].value() if x in Mapping.DQS_CODE_DICT])
         r['wantSalaryHigh'] = str(self.b_options['max_salary'].value())
         r['workYearsLow'] = str(self.b_options['working_years_min'].value())
 
