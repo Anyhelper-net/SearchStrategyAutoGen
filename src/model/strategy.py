@@ -11,8 +11,9 @@ from src.model.job_analysis import Analysis
 from src.model.tier import Tier
 from src.config.lp import TEMP_LP_SEARCH_PARAMS_INPUT_VO, SALARY_MAX_ZOOM_FACTOR, Mapping
 from copy import deepcopy
-from src.config.path import LP_DQS_CODE_PATH
+from src.utils.logger import logger
 
+strategy_logger = logger.getChild('strategy')
 
 class SearchStrategy:
     class Option:
@@ -184,7 +185,11 @@ class SearchStrategy:
         r['keyword'] = self.e_options['keywords'].value()
         r['anyKeyword'] = '1' if self.is_any_keywords else '0'
 
-        r['industrys'] = Mapping.INDUSTRY_CODE_DICT[self.n_options['industry'].value()]
+        try:
+            r['industrys'] = Mapping.INDUSTRY_CODE_DICT[self.n_options['industry'].value()]
+        except KeyError:
+            strategy_logger.warn(f'no industry <{self.n_options['industry'].value()}>')
+            r['industrys'] = ''
 
         return r
 
