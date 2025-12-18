@@ -15,4 +15,7 @@ class LpService:
     def get_resume_count(self, inner_payload) -> int:
         resp = self.proxy.search_resumes(inner_payload)
         data = resp.json()
-        return data['data']['totalCnt']
+        try:
+            return data['data']['totalCnt']
+        except KeyError:
+            raise RuntimeError(resp.text)
