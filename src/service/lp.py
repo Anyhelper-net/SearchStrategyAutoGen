@@ -6,16 +6,34 @@
 """
 
 from src.io.lp import LpUserProxy
+from src.utils.method import random_sleep
+from src.utils.logger import logger
+
+lp_service_logger = logger.getChild('lp_service')
 
 
 class LpService:
-    def __init__(self, cookies):
-        self.proxy = LpUserProxy(cookies)
+    class LpServiceException(RuntimeError):
+        def __init__(self, resp):
+            super().__init__(resp.text)
+            self.resp = resp
 
-    def get_resume_count(self, inner_payload) -> int:
-        resp = self.proxy.search_resumes(inner_payload)
-        data = resp.json()
+    def __init__(self, cookies):
         try:
-            return data['data']['totalCnt']
-        except KeyError:
-            raise RuntimeError(resp.text)
+            self.proxy = LpUserProxy(cookies)
+        except LpUserProxy.LpIOException as e:
+            raise LpService.LpServiceException(e.resp)
+
+    def get_resume_count(self, inner_payload, retry=1) -> int:
+        for _ in range(retry + 1):
+            random_sleep()
+            resp = self.proxy.search_resumes(inner_payload)
+            data = resp.json()
+            try:
+                return data['data']['totalCnt']
+            except KeyError:
+                if resp.text == '{"flag":0}':
+                    lp_service_logger.warn('waiting human_robot verification')
+                    self.proxy.human_robot_verification()
+                else:
+                    raise LpService.LpServiceException(resp)

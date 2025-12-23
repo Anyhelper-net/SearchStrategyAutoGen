@@ -338,7 +338,7 @@ class Generator:
         resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_cores_{data}',
                                       json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False), 'liepin')
         if resp.ok:
-            self.logger.info(f'strategy uploaded: {self.strategy}')
+            self.logger.info(f'strategy uploaded: {self.strategy}\n')
 
         # company strategy
         if self.job_analysis.company.type == '明确列出名字':
@@ -349,9 +349,9 @@ class Generator:
                                           json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False),
                                           'liepin')
             if resp.ok:
-                self.logger.info(f'strategy uploaded: {self.strategy}')
+                self.logger.info(f'strategy uploaded: {self.strategy}\n')
         else:
-            self.logger.warn('no target comp strategy')
+            self.logger.warn('no target comp strategy\n')
 
         # rares strategy
         self._dfs_strategy_rares_B()
@@ -360,4 +360,4 @@ class Generator:
         resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
                                       json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False), 'liepin')
         if resp.ok:
-            self.logger.info(f'strategy uploaded: {self.strategy}')
+            self.logger.info(f'strategy uploaded: {self.strategy}\n')
