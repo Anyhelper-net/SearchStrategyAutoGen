@@ -2,7 +2,6 @@
 *.log
 *test.py
 test*.py
-*.spec
 
 __pycache__
 .idea/
