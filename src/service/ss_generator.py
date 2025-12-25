@@ -333,31 +333,37 @@ class Generator:
     def run(self):
         # cores strategy
         self.dfs_strategy_cores()
-        resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
-        data = bot_io.parse(resp)
-        resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_cores_{data}',
-                                      json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False), 'liepin')
-        if resp.ok:
-            self.logger.info(f'strategy uploaded: {self.strategy}\n')
+        if self.strategy.count:
+            resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
+            data = bot_io.parse(resp)
+            resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_cores_{data}',
+                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False), 'liepin')
+            if resp.ok:
+                self.logger.info(
+                    f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
 
         # company strategy
         if self.job_analysis.company.type == '明确列出名字':
             self.dfs_strategy_company()
-            resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
-            data = bot_io.parse(resp)
-            resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_company_{data}',
-                                          json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False),
-                                          'liepin')
-            if resp.ok:
-                self.logger.info(f'strategy uploaded: {self.strategy}\n')
+            if self.strategy.count:
+                resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
+                data = bot_io.parse(resp)
+                resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_company_{data}',
+                                              json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
+                                              'liepin')
+                if resp.ok:
+                    self.logger.info(
+                        f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
         else:
             self.logger.warn('no target comp strategy\n')
 
         # rares strategy
         self._dfs_strategy_rares_B()
-        resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
-        data = bot_io.parse(resp)
-        resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
-                                      json.dumps(self.strategy.get_lp_payload_inner(), ensure_ascii=False), 'liepin')
-        if resp.ok:
-            self.logger.info(f'strategy uploaded: {self.strategy}\n')
+        if self.strategy.count:
+            resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
+            data = bot_io.parse(resp)
+            resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
+                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False), 'liepin')
+            if resp.ok:
+                self.logger.info(
+                    f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')

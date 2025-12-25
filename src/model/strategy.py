@@ -15,6 +15,7 @@ from src.utils.logger import logger
 
 strategy_logger = logger.getChild('strategy')
 
+
 class SearchStrategy:
     class Option:
         def __init__(self, values: Sequence, index: int):
@@ -156,6 +157,45 @@ class SearchStrategy:
         self.n_options['industry'] = SearchStrategy.Option(('', analysis.industry.core),
                                                            0 if analysis.industry.core_tier.tp is Tier.Type.Nice else 1)
 
+    def get_lp_local_storage(self):
+        r = deepcopy(TEMP_LP_SEARCH_PARAMS_INPUT_VO)
+        r['activeStatus'] = self.a_options['active_status'].value()
+        r['jobName'] = ' '.join(self.a_options['position_name'].value())
+        r['major'] = ' '.join(self.a_options['major'].value())
+        r['jobStability'] = self.a_options['stability'].value()
+
+        # r['wantDqs'] = ','.join(map(lambda x: Mapping.DQS_CODE_DICT[x], self.b_options['city'].value()))
+        r['wantDqs'] = [{'dqCode': Mapping.DQS_CODE_DICT[x], 'dqName': x} for x in self.b_options['city'].value() if
+                        x in Mapping.DQS_CODE_DICT]
+        r['wantSalaryHigh'] = str(self.b_options['max_salary'].value())
+        r['workYearsLow'] = str(self.b_options['working_years_min'].value())
+
+        r['languageSkills'] = Mapping.LAN_CODE_DICT[self.c_options['language'].value()]
+        r['ageHigh'] = str(self.c_options['max_age'].value())
+        r['sex'] = Mapping.SEX_CODE_DICT[self.c_options['sex'].value()]
+        r['eduLevels'] = Mapping.EDU_LEVEL_CODE_DICT[self.c_options['academic'].value()]
+        if self.c_options['college'] == '':
+            pass
+        elif self.c_options['college'] == '985/211':
+            r['schoolKindList'] = ["1", "2"]
+        elif self.c_options['college'] == '统招':
+            r['eduLevelTzCode'] = r['eduLevels'][-1]
+
+        r['compName'] = self.comp_name
+        r['compPeriod'] = self.d_options['comp_period'].value()
+
+        r['keyword'] = self.e_options['keywords'].value()
+        r['anyKeyword'] = '1' if self.is_any_keywords else '0'
+
+        try:
+            r['industrys'] = [{'code': Mapping.INDUSTRY_CODE_DICT[self.n_options['industry'].value()],
+                               'name': self.n_options['industry'].value()}]
+        except KeyError:
+            strategy_logger.warn(f'no industry <{self.n_options['industry'].value()}>')
+            r['industrys'] = ''
+
+        return r
+
     def get_lp_payload_inner(self):
         r = deepcopy(TEMP_LP_SEARCH_PARAMS_INPUT_VO)
         r['activeStatus'] = self.a_options['active_status'].value()
@@ -164,7 +204,8 @@ class SearchStrategy:
         r['jobStability'] = self.a_options['stability'].value()
 
         # r['wantDqs'] = ','.join(map(lambda x: Mapping.DQS_CODE_DICT[x], self.b_options['city'].value()))
-        r['wantDqs'] = ','.join([Mapping.DQS_CODE_DICT[x] for x in self.b_options['city'].value() if x in Mapping.DQS_CODE_DICT])
+        r['wantDqs'] = ','.join(
+            [Mapping.DQS_CODE_DICT[x] for x in self.b_options['city'].value() if x in Mapping.DQS_CODE_DICT])
         r['wantSalaryHigh'] = str(self.b_options['max_salary'].value())
         r['workYearsLow'] = str(self.b_options['working_years_min'].value())
 
