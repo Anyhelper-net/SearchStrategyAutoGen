@@ -44,6 +44,7 @@ class Generator:
         self._parse_search_keywords_groups(data1)
         self._parse_job_analysis(data1, data2)
         self._parse_hard_reqs(data1)
+
         # self._set_default_strategy()
 
     def _get_position_info(self):
@@ -75,7 +76,8 @@ class Generator:
             keywords = vals[3].split()
             keywords_mapping = vals[5].split()
             tp = vals[1]
-            tier = Tier(vals[4], int(vals[0].replace(vals[4], '')))
+            tier = Tier(vals[0][:-1], int(vals[0][-1]))
+            # tier = Tier(vals[4], int(vals[0].replace(vals[4], '')))
             is_rare = False if vals[6] == 'FALSE' else True
             group = KeywordsGroup(keywords, keywords_mapping, tp, tier, is_rare)
             groups.append(group)
@@ -337,6 +339,8 @@ class Generator:
             if resp.ok:
                 self.logger.info(
                     f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
+            else:
+                self.logger.warn(resp.text)
 
         # company strategy
         if self.job_analysis.company.type == '明确列出名字':
@@ -350,6 +354,8 @@ class Generator:
                 if resp.ok:
                     self.logger.info(
                         f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
+                else:
+                    self.logger.warn(resp.text)
         else:
             self.logger.warn('no target comp strategy\n')
 
@@ -363,3 +369,5 @@ class Generator:
             if resp.ok:
                 self.logger.info(
                     f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
+            else:
+                self.logger.warn(resp.text)
