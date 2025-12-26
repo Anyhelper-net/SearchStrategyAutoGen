@@ -204,25 +204,21 @@ class Generator:
             keywords1 = []
             keywords2 = []
             keywords3 = []
+
             for group in self.keywords_groups:
                 if group.tier.tp is Tier.Type.Must and group.tier.lv == 1:
                     keywords1 += group.keywords
-                    break
-
-            for group in self.keywords_groups:
-                if group.tier.tp is Tier.Type.Nice and group.tier.lv == 1:
-                    keywords1 += group.keywords
                     keywords2 += group.keywords
                     break
 
             for group in self.keywords_groups:
-                if group.tier.tp is Tier.Type.Must or group.tier.tp is Tier.Type.Strong:
+                if group.tier.tp is Tier.Type.Strong and group.tier.lv == 1:
                     keywords2 += group.keywords
-                    keywords3 += group.keywords
+                    break
 
             for group in self.keywords_groups:
-                if group.tier.tp is Tier.Type.Nice:
-                    keywords3 += group.keywords
+                keywords3 += group.keywords
+
             keywords1 = ' '.join(keywords1)
             keywords2 = ' '.join(keywords2)
             keywords3 = ' '.join(keywords3)

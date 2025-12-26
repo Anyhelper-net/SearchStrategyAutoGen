@@ -9,7 +9,7 @@ from websocket import WebSocketApp
 import json
 import uuid
 import time
-import src.config
+import src.config as cfg
 from src.config.ws_client import WS_SEVER_URL, HEARTBEAT_GAP
 from src.utils.logger import logger
 from src.service.ss_generator import Generator
@@ -57,18 +57,20 @@ class Client:
             with self.lck:
                 pid = int(data['payload']['positionID'])
                 lp_cookies = data['payload']['cookies']['liepin']['value']
+                lp_cookies = json.loads(lp_cookies)
                 mm_cookies = data['payload']['cookies']['maimai']['value']
+                mm_cookies = json.loads(mm_cookies)
 
                 try:
                     generator = Generator(lp_cookies, pid)
                     generator.run()
-                    self.report_task(data['payload']['task_id'], True, '')
+                    self.report_task('TASK_RESULT', data['payload']['task_id'], True, '')
+                    self.logger.info('task completed\n')
                 except Exception as e:
-                    self.report_task(data['payload']['task_id'], False, str(e))
+                    self.report_task('TASK_ERROR', data['payload']['task_id'], False, str(e))
+                    self.logger.error('task error\n')
                     self.logger.error(e)
-                    if src.config.IS_DEV:
-                        raise
-                    else:
+                    if cfg.IS_DEV:
                         traceback.print_exc()
 
                 # add helpers here
@@ -102,12 +104,16 @@ class Client:
             return
         self.hb_thread.start()
 
-    def report_task(self, task_id, is_ok, fail_log):
+    def report_task(self, msg_type, task_id, is_ok, fail_log):
         self.ws.send(json.dumps({
-            "task_id": task_id,
-            "ok": is_ok,
-            "file_path": '',
-            "fail_log": fail_log,
+            'id': str(uuid.uuid4()),
+            'type': msg_type,
+            'payload': {
+                "task_id": task_id,
+                "ok": is_ok,
+                "file_path": '',
+                "fail_log": fail_log,
+            }
         }, ensure_ascii=False))
 
     def __del__(self):
