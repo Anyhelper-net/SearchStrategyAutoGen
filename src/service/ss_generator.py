@@ -62,8 +62,10 @@ class Generator:
             'comments': data['comments']
         }
         msg = json.dumps(msg, ensure_ascii=False)
+        self.logger.info(f'bot1 input:\n{msg}')
         resp = bot_io.send(msg, ENUM_MODEL_ID.REQUIREMENT_PARSER)
         data = bot_io.parse(resp)
+        self.logger.info(f'bot1 output:\n{data}')
 
         lines = data.split('\n')
         position_tp = self.PositionType(lines.pop()[5:])
@@ -94,8 +96,11 @@ class Generator:
             'employer': data2['results'],
         }
         msg = json.dumps(msg, ensure_ascii=False)
+        self.logger.info(f'bot2 input:\n{msg}')
         resp = bot_io.send(msg, ENUM_MODEL_ID.JOBINFO_PARSER)
         data = bot_io.parse(resp)
+        self.logger.info(f'bot2 output:\n{data}')
+
         data = json.loads(data)
         self.job_analysis = Analysis(**data)
 
@@ -335,12 +340,15 @@ class Generator:
             resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
             data = bot_io.parse(resp)
             resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_cores_{data}',
-                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False), 'liepin')
+                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
+                                          'liepin')
             if resp.ok:
                 self.logger.info(
                     f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
             else:
                 self.logger.warn(resp.text)
+        else:
+            self.logger.warn('got no candidate')
 
         # company strategy
         if self.job_analysis.company.type == '明确列出名字':
@@ -356,18 +364,37 @@ class Generator:
                         f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
                 else:
                     self.logger.warn(resp.text)
+            else:
+                self.logger.warn('got no candidate')
         else:
             self.logger.warn('no target comp strategy\n')
 
-        # rares strategy
+        # rares strategy B & backup strategy
         self._dfs_strategy_rares_B()
         if self.strategy.count:
             resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
             data = bot_io.parse(resp)
             resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
-                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False), 'liepin')
+                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
+                                          'liepin')
             if resp.ok:
                 self.logger.info(
                     f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
             else:
                 self.logger.warn(resp.text)
+
+            self.trace.pop()
+            strategy_backup = min(self.trace, key=lambda x: abs(x['count'] - self.strategy.r_limit))
+            self.strategy.load(strategy_backup)
+            resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
+            data = bot_io.parse(resp)
+            resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
+                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
+                                          'liepin')
+            if resp.ok:
+                self.logger.info(
+                    f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
+            else:
+                self.logger.warn(resp.text)
+        else:
+            self.logger.warn('got no candidate')
