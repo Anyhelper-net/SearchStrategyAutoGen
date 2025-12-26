@@ -384,17 +384,20 @@ class Generator:
                 self.logger.warn(resp.text)
 
             self.trace.pop()
-            strategy_backup = min(self.trace, key=lambda x: abs(x['count'] - self.strategy.r_limit))
-            self.strategy.load(strategy_backup)
-            resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
-            data = bot_io.parse(resp)
-            resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
-                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
-                                          'liepin')
-            if resp.ok:
-                self.logger.info(
-                    f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
+            if self.trace:
+                strategy_backup = min(self.trace, key=lambda x: abs(x['count'] - self.strategy.r_limit))
+                self.strategy.load(strategy_backup)
+                resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
+                data = bot_io.parse(resp)
+                resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
+                                              json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
+                                              'liepin')
+                if resp.ok:
+                    self.logger.info(
+                        f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
+                else:
+                    self.logger.warn(resp.text)
             else:
-                self.logger.warn(resp.text)
+                self.logger.info('no backup strategy')
         else:
             self.logger.warn('got no candidate')
