@@ -7,6 +7,10 @@
 import json
 import math
 from enum import Enum
+import os
+
+from concurrent_log_handler import ConcurrentRotatingFileHandler
+
 from src.config.lp import RangeTargetResumes, DFS_STEP_MAX
 from src.service.lp import LpService
 import src.io.bot as bot_io
@@ -17,6 +21,7 @@ from src.model import *
 import copy
 from src.utils.logger import logger
 from src.utils.method import random_sleep
+from src.config.path import LOG_DIR
 
 
 class Generator:
@@ -25,7 +30,13 @@ class Generator:
         MutiCore = '多核心岗位'
 
     def __init__(self, cookies, pid):
-        self.logger = logger.getChild('strategy_generator')
+        self.logger = logger.getChild(f'strategy_generator_{pid}')
+        handler = ConcurrentRotatingFileHandler(
+            os.path.join(LOG_DIR, f'pid_{pid}.log'),
+            maxBytes=1024 * 1024,
+            backupCount=5
+        )
+        self.logger.addHandler(handler)
 
         self.logger.info(f'building generator for pid:{pid}...')
 
