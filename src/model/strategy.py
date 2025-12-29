@@ -21,28 +21,29 @@ class SearchStrategy:
         def __init__(self, values: Sequence, index: int):
             self.values = values
             self.index = index
-            self.len = len(values)
+            self.length = len(values)
 
         def zoom_in(self):
             self.index += 1
-            if self.index >= self.len:
-                self.index = self.len - 1
-                raise self.ZoomException('cannot zoom out')
-            return self.value()
+            try:
+                return self.value()
+            except IndexError:
+                self.index -= 1
+                raise self.ZoomException('cannot zoom in')
 
         def zoom_out(self):
             self.index -= 1
-            if self.index < 0:
-                self.index = 0
-                raise self.ZoomException('cannot zoom in')
-            return self.value()
+            try:
+                return self.value()
+            except IndexError:
+                self.index += 1
+                raise self.ZoomException('cannot zoom out')
 
         def value(self):
             return self.values[self.index]
 
         class ZoomException(RuntimeError):
-            def __init__(self, *args, **kwargs):
-                super().__init__(args, kwargs)
+            pass
 
     def export(self):
         r = {
@@ -240,7 +241,7 @@ class SearchStrategy:
             r += list(self.all_options_dict[c].keys())
         return r
 
-    def _get_option(self, key):
+    def _get_option(self, key) -> Option:
         for options in self.all_options_dict.values():
             try:
                 return options[key]
@@ -259,7 +260,7 @@ class SearchStrategy:
         before = option.value()
         return before, option.zoom_in()
 
-    def set_keywords(self, val: Option):
+    def set_keywords_options(self, val: Option):
         self.e_options['keywords'] = val
 
     def set_comp_name(self, val: str):

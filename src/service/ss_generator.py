@@ -86,14 +86,15 @@ class Generator:
                 continue
             vals = line.split('|')
             keywords = vals[3].split()
-            keywords_mapping = vals[5].split()
+            keywords_mapping = vals[4].split()
             tp = vals[1]
             tier = Tier(vals[0][:-1], int(vals[0][-1]))
             # tier = Tier(vals[4], int(vals[0].replace(vals[4], '')))
-            is_rare = False if vals[6] == 'FALSE' else True
+            is_rare = False if vals[5] == 'FALSE' else True
             group = KeywordsGroup(keywords, keywords_mapping, tp, tier, is_rare)
             groups.append(group)
 
+        groups = sorted(groups, key=lambda g: g.tier)
         self.keywords_groups = groups
         self.position_type = position_tp
         # return groups, position_tp
@@ -166,33 +167,15 @@ class Generator:
                     keywords += group.keywords_mapping
             keywords = ' '.join(keywords)
             keywords = SearchStrategy.Option((keywords,), 0)
-            self.strategy.set_keywords(keywords)
+            self.strategy.set_keywords_options(keywords)
             self.strategy.is_any_keywords = True
 
         # elif self.position_type is self.PositionType.MutiCore:
         else:
             self.logger.info('multiple cores')
 
-            keywords1 = []
-            keywords2 = []
-            keywords3 = []
-            for group in self.keywords_groups:
-                if group.tier.tp is Tier.Type.Must:
-                    keywords1 += group.keywords
-                    keywords2 += group.keywords
-                    keywords3 += group.keywords
-                elif group.tier.tp is Tier.Type.Strong:
-                    keywords2 += group.keywords
-                    keywords3 += group.keywords
-                elif group.tier.tp is Tier.Type.Nice:
-                    keywords3 += group.keywords
-
-            keywords1 = ' '.join(keywords1)
-            keywords2 = ' '.join(keywords2)
-            keywords3 = ' '.join(keywords3)
-
-            keywords = SearchStrategy.Option((keywords1, keywords2, keywords3), 1)
-            self.strategy.set_keywords(keywords)
+            values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
+            self.strategy.set_keywords_options(SearchStrategy.Option(values, values.encode_idx(2, 0)))
             self.strategy.is_any_keywords = False
 
         self._set_strategy_count()
@@ -241,7 +224,7 @@ class Generator:
             keywords3 = ' '.join(keywords3)
 
             keywords = SearchStrategy.Option((keywords1, keywords2, keywords3), 1)
-            self.strategy.set_keywords(keywords)
+            self.strategy.set_keywords_options(keywords)
             self.strategy.is_any_keywords = False
         else:
             self.logger.info('multiple cores')
@@ -254,7 +237,7 @@ class Generator:
             keywords = ' '.join(keywords)
 
             keywords = SearchStrategy.Option((keywords,), 0)
-            self.strategy.set_keywords(keywords)
+            self.strategy.set_keywords_options(keywords)
             self.strategy.is_any_keywords = True
 
         self._set_strategy_count()
@@ -274,15 +257,21 @@ class Generator:
     def _maxima_test(self, keys, is_zoom_in, l, r) -> bool:
         backup = self.strategy.export()
 
+        # for key in keys:
+        #     while True:
+        #         try:
+        #             if is_zoom_in:
+        #                 self.strategy.zoom_in(key)
+        #             else:
+        #                 self.strategy.zoom_out(key)
+        #         except SearchStrategy.Option.ZoomException:
+        #             break
         for key in keys:
-            while True:
-                try:
-                    if is_zoom_in:
-                        self.strategy.zoom_in(key)
-                    else:
-                        self.strategy.zoom_out(key)
-                except SearchStrategy.Option.ZoomException:
-                    break
+            opt = self.strategy._get_option(key)
+            if is_zoom_in:
+                opt.index = opt.length - 1
+            else:
+                opt.index = 0
 
         self._set_strategy_count()
         res = None

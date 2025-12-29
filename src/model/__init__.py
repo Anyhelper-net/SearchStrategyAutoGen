@@ -6,7 +6,7 @@
 """
 
 from .hard_reqs import HardRequirements
-from .keywords_group import KeywordsGroup
+from .keywords_group import KeywordsGroup, LazyTieredKeywordSequence
 from .tier import Tier
 from .strategy import SearchStrategy
 from .job_analysis import Analysis
