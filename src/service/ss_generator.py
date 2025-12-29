@@ -17,7 +17,6 @@ from src.model import *
 import copy
 from src.utils.logger import logger
 from src.utils.method import random_sleep
-from src.io.anyhelper import upload_search_strategy
 
 
 class Generator:
@@ -199,7 +198,7 @@ class Generator:
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
-    def _dfs_strategy_rares_B(self):
+    def _dfs_strategy_rares_b(self):
         self.logger.info('start rares strategy B generation')
 
         l, r = RangeTargetResumes.B.value
@@ -264,18 +263,15 @@ class Generator:
     def _maxima_test(self, keys, is_zoom_in, l, r) -> bool:
         backup = self.strategy.export()
 
-        if is_zoom_in:
-            for key in keys:
+        for key in keys:
+            while True:
                 try:
-                    self.strategy.zoom_in(key)
+                    if is_zoom_in:
+                        self.strategy.zoom_in(key)
+                    else:
+                        self.strategy.zoom_out(key)
                 except SearchStrategy.Option.ZoomException:
-                    pass
-        else:
-            for key in keys:
-                try:
-                    self.strategy.zoom_out(key)
-                except SearchStrategy.Option.ZoomException:
-                    pass
+                    break
 
         self._set_strategy_count()
         res = None
@@ -314,6 +310,7 @@ class Generator:
             if self.strategy.count > l:
                 return True
 
+        next_keys = copy.copy(keys)
         for key in keys:
             self.strategy.load(backup)
             try:
@@ -325,79 +322,41 @@ class Generator:
                     self.logger.info(f'based on <{id}> zoom out <{key}> from <{before}> into <{after}>')
             except SearchStrategy.Option.ZoomException:
                 continue
-            next_keys = copy.copy(keys)
-            next_keys.remove(key)
 
             if self._dfs_strategy(next_keys, is_zoom_in, l, r):
                 return True
 
+            next_keys.remove(key)
+
         return False
+
+    def _upload_strategy(self, mid_name):
+        if self.strategy.count:
+            resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
+            data = bot_io.parse(resp)
+            name = f'{self.strategy.count}/{self.strategy.r_limit}_{mid_name}_{data}'
+            payload = json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False)
+            resp = ah_io.upload_search_strategy(self.pid, name, payload, 'liepin')
+            if resp.ok:
+                self.logger.info(
+                    f'strategy {name} uploaded:\n {self.strategy}\n')
+            else:
+                self.logger.warn(resp.text)
+        else:
+            self.logger.warn('got no candidate')
 
     def run(self):
         # cores strategy
         self.dfs_strategy_cores()
-        if self.strategy.count:
-            resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
-            data = bot_io.parse(resp)
-            resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_cores_{data}',
-                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
-                                          'liepin')
-            if resp.ok:
-                self.logger.info(
-                    f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
-            else:
-                self.logger.warn(resp.text)
-        else:
-            self.logger.warn('got no candidate')
+        self._upload_strategy('cores')
 
         # company strategy
         if self.job_analysis.company.type == '明确列出名字':
             self.dfs_strategy_company()
-            if self.strategy.count:
-                resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
-                data = bot_io.parse(resp)
-                resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_company_{data}',
-                                              json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
-                                              'liepin')
-                if resp.ok:
-                    self.logger.info(
-                        f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
-                else:
-                    self.logger.warn(resp.text)
-            else:
-                self.logger.warn('got no candidate')
+            self._upload_strategy('comp')
         else:
             self.logger.warn('no target comp strategy\n')
 
         # rares strategy B & backup strategy
-        self._dfs_strategy_rares_B()
-        if self.strategy.count:
-            resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
-            data = bot_io.parse(resp)
-            resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
-                                          json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
-                                          'liepin')
-            if resp.ok:
-                self.logger.info(
-                    f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
-            else:
-                self.logger.warn(resp.text)
-
-            self.trace.pop()
-            if self.trace:
-                strategy_backup = min(self.trace, key=lambda x: abs(x['count'] - self.strategy.r_limit))
-                self.strategy.load(strategy_backup)
-                resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
-                data = bot_io.parse(resp)
-                resp = upload_search_strategy(self.pid, f'{self.strategy.count}/{self.strategy.r_limit}_raresB_{data}',
-                                              json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False),
-                                              'liepin')
-                if resp.ok:
-                    self.logger.info(
-                        f'strategy {self.strategy.count}/{self.strategy.r_limit}_cores_{data} uploaded:\n {self.strategy}\n')
-                else:
-                    self.logger.warn(resp.text)
-            else:
-                self.logger.info('no backup strategy')
-        else:
-            self.logger.warn('got no candidate')
+        self._dfs_strategy_rares_b()
+        self._upload_strategy('rares_b')
