@@ -145,9 +145,9 @@ class Generator:
 
         keys = self.strategy.get_option_keys('DCBA' if is_zoom_in else 'DABC')
 
-        if not self._maxima_test(keys, is_zoom_in, l, r):
-            self.logger.info('cant zoom into legal range')
-            return
+        # if not self._maxima_test(keys, is_zoom_in, l, r):
+        #     self.logger.info('cant zoom into legal range')
+        #     return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
@@ -175,7 +175,7 @@ class Generator:
             self.logger.info('multiple cores')
 
             values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
-            self.strategy.set_keywords_options(SearchStrategy.Option(values, values.encode_idx(2, 0)))
+            self.strategy.set_keywords_options(SearchStrategy.Option(values, values.encode_idx(2, (0, 0))))
             self.strategy.is_any_keywords = False
 
         self._set_strategy_count()
@@ -186,9 +186,9 @@ class Generator:
         else:
             keys = self.strategy.get_option_keys('ECBA' if is_zoom_in else 'EABCN')
 
-        if not self._maxima_test(keys, is_zoom_in, l, r):
-            self.logger.info('cant zoom into legal range')
-            return
+        # if not self._maxima_test(keys, is_zoom_in, l, r):
+        #     self.logger.info('cant zoom into legal range')
+        #     return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
@@ -201,30 +201,8 @@ class Generator:
         if self.position_type is self.PositionType.SingleCore:
             self.logger.info('single core')
 
-            keywords1 = []
-            keywords2 = []
-            keywords3 = []
-
-            for group in self.keywords_groups:
-                if group.tier.tp is Tier.Type.Must and group.tier.lv == 1:
-                    keywords1 += group.keywords
-                    keywords2 += group.keywords
-                    break
-
-            for group in self.keywords_groups:
-                if group.tier.tp is Tier.Type.Strong and group.tier.lv == 1:
-                    keywords2 += group.keywords
-                    break
-
-            for group in self.keywords_groups:
-                keywords3 += group.keywords
-
-            keywords1 = ' '.join(keywords1)
-            keywords2 = ' '.join(keywords2)
-            keywords3 = ' '.join(keywords3)
-
-            keywords = SearchStrategy.Option((keywords1, keywords2, keywords3), 1)
-            self.strategy.set_keywords_options(keywords)
+            values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
+            self.strategy.set_keywords_options(SearchStrategy.Option(values, values.encode_idx(2, (0, 0))))
             self.strategy.is_any_keywords = False
         else:
             self.logger.info('multiple cores')
@@ -248,12 +226,13 @@ class Generator:
         else:
             keys = self.strategy.get_option_keys('CBA' if is_zoom_in else 'ABCN')
 
-        if not self._maxima_test(keys, is_zoom_in, l, r):
-            self.logger.warn('cant zoom into legal range')
-            return
+        # if not self._maxima_test(keys, is_zoom_in, l, r):
+        #     self.logger.warn('cant zoom into legal range')
+        #     return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
+    # as keywords zooming is no longer line space after 3.1.0, _maxima_test should not be used anymore
     def _maxima_test(self, keys, is_zoom_in, l, r) -> bool:
         backup = self.strategy.export()
 
@@ -293,7 +272,6 @@ class Generator:
         self.trace.append(backup)
         id = len(self.trace)
         self.logger.info(f'<{id}>: {self.strategy}')
-
         if id > limitation:
             tmp = min(self.trace, key=lambda x: abs(x['count'] - r))
             self.strategy.load(tmp)
@@ -345,6 +323,23 @@ class Generator:
         else:
             self.logger.warn('got no candidate')
 
+    def _remove_current_keywords(self):
+        to_be_removed_keywords = self.strategy.e_options['keywords'].values().split()
+
+        for group in self.keywords_groups:
+            group: KeywordsGroup
+            for to_be_removed_keyword in to_be_removed_keywords:
+                try:
+                    group.keywords.remove(to_be_removed_keyword)
+                    continue
+                except ValueError:
+                    pass
+                try:
+                    group.keywords_mapping.remove(to_be_removed_keyword)
+                    continue
+                except ValueError:
+                    pass
+
     def run(self):
         # cores strategy
         self.dfs_strategy_cores()
@@ -360,3 +355,8 @@ class Generator:
         # rares strategy B & backup strategy
         self._dfs_strategy_rares_b()
         self._upload_strategy('rares_b')
+
+        # backup
+        self._remove_current_keywords()
+        self._dfs_strategy_rares_b()
+        self._upload_strategy('backup')
