@@ -166,8 +166,8 @@ class SearchStrategy:
         r['jobStability'] = self.a_options['stability'].value()
 
         # r['wantDqs'] = ','.join(map(lambda x: Mapping.DQS_CODE_DICT[x], self.b_options['city'].value()))
-        r['wantDqs'] = [{'dqCode': Mapping.DQS_CODE_DICT[x], 'dqName': x} for x in self.b_options['city'].value() if
-                        x in Mapping.DQS_CODE_DICT]
+        r['wantDqsOut'] = [{'dqCode': Mapping.DQS_CODE_DICT[x], 'dqName': x} for x in self.b_options['city'].value() if
+                           x in Mapping.DQS_CODE_DICT]
         r['wantSalaryHigh'] = str(self.b_options['max_salary'].value())
         r['workYearsLow'] = str(self.b_options['working_years_min'].value())
 
@@ -189,11 +189,11 @@ class SearchStrategy:
         r['anyKeyword'] = '1' if self.is_any_keywords else '0'
 
         try:
-            r['industrys'] = [{'code': Mapping.INDUSTRY_CODE_DICT[self.n_options['industry'].value()],
-                               'name': self.n_options['industry'].value()}]
+            r['industryArr'] = [{'code': Mapping.INDUSTRY_CODE_DICT[self.n_options['industry'].value()],
+                                 'name': self.n_options['industry'].value()}]
         except KeyError:
             strategy_logger.warn(f'no industry <{self.n_options['industry'].value()}>')
-            r['industrys'] = ''
+            r['industryArr'] = ''
 
         return r
 

@@ -91,7 +91,8 @@ class LazyTieredKeywordSequence(Sequence):
         self.k_min = k_min
 
         self.term_lists = [
-            g.keywords + g.keywords_mapping
+            # g.keywords + g.keywords_mapping
+            g.keywords_mapping
             for g in groups
         ]
         self.term_lens = [len(t) for t in self.term_lists]

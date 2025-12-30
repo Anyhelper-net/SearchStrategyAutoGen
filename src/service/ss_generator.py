@@ -50,6 +50,7 @@ class Generator:
         self.hard_reqs: HardRequirements
         self.strategy: SearchStrategy
         self.trace: List[dict]
+        self.default_group_num: int = 0
 
         self._parse_search_keywords_groups(data1)
         self._parse_job_analysis(data1, data2)
@@ -93,8 +94,10 @@ class Generator:
             is_rare = False if vals[5] == 'FALSE' else True
             group = KeywordsGroup(keywords, keywords_mapping, tp, tier, is_rare)
             groups.append(group)
+            if tier.tp is not Tier.Type.Nice:
+                self.default_group_num += 1
 
-        groups = sorted(groups, key=lambda g: g.tier)
+        groups = sorted(groups, key=lambda g: g.tier, reverse=True)
         self.keywords_groups = groups
         self.position_type = position_tp
         # return groups, position_tp
@@ -163,7 +166,7 @@ class Generator:
             keywords = []
             for group in self.keywords_groups:
                 if group.tier.tp is Tier.Type.Must:
-                    keywords += group.keywords
+                    # keywords += group.keywords
                     keywords += group.keywords_mapping
             keywords = ' '.join(keywords)
             keywords = SearchStrategy.Option((keywords,), 0)
@@ -175,7 +178,8 @@ class Generator:
             self.logger.info('multiple cores')
 
             values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
-            self.strategy.set_keywords_options(SearchStrategy.Option(values, values.encode_idx(2, (0, 0))))
+            self.strategy.set_keywords_options(
+                SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
             self.strategy.is_any_keywords = False
 
         self._set_strategy_count()
@@ -202,7 +206,8 @@ class Generator:
             self.logger.info('single core')
 
             values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
-            self.strategy.set_keywords_options(SearchStrategy.Option(values, values.encode_idx(2, (0, 0))))
+            self.strategy.set_keywords_options(
+                SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
             self.strategy.is_any_keywords = False
         else:
             self.logger.info('multiple cores')
@@ -210,7 +215,7 @@ class Generator:
             keywords = []
             for group in self.keywords_groups:
                 if group.tier.tp is Tier.Type.Must or group.tier.tp is Tier.Type.Strong:
-                    keywords += group.keywords
+                    # keywords += group.keywords
                     keywords += group.keywords_mapping
             keywords = ' '.join(keywords)
 
