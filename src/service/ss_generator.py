@@ -182,7 +182,7 @@ class Generator:
             #     SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
 
             self.strategy.is_any_keywords = False
-            
+
             keywords = []
             for layer_max in range(2, len(self.keywords_groups)):
                 combs = LazyProductSequence(self.keywords_groups[:layer_max])
@@ -380,7 +380,7 @@ class Generator:
             self.logger.warn('got no candidate')
 
     def _remove_current_keywords(self):
-        to_be_removed_keywords = self.strategy.e_options['keywords'].values().split()
+        to_be_removed_keywords = self.strategy.e_options['keywords'].value().split()
 
         for group in self.keywords_groups:
             group: KeywordsGroup
