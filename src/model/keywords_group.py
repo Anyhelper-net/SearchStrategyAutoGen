@@ -41,41 +41,60 @@ class KeywordsGroup:
 #         for combo in keyword_group_iter(groups[:k], k):
 #             yield combo
 
-
 class LazyProductSequence(Sequence):
-    def __init__(self, groups: List[KeywordsGroup]):
+    def __init__(self, groups: List):
         self.groups = groups
         self.term_lists = [
-            g.keywords + g.keywords_mapping
+            # g.keywords + g.keywords_mapping
+            g.keywords_mapping
             for g in groups
         ]
-
-        self._lens = [len(t) for t in self.term_lists]
-        self._len = math.prod(self._lens)
+        self.term_lens = [len(t) for t in self.term_lists]
+        self._len = math.prod(self.term_lens)
 
     def __len__(self):
         return self._len
 
-    def __getitem__(self, idx):
-        if idx < 0:
+    def encode_idx(self, term_indices):
+        if len(term_indices) != len(self.term_lens):
             raise IndexError
 
-        result = []
-        for terms in self.term_lists:
-            size = len(terms)
+        inner = 0
+        stride = 1
+        for i in reversed(range(len(self.term_lens))):
+            size = self.term_lens[i]
+            ti = term_indices[i]
+            if ti < 0 or ti >= size:
+                raise IndexError
+            inner += ti * stride
+            stride *= size
+
+        return inner
+
+    def decode_idx(self, index):
+        if index < 0 or index >= self._len:
+            raise IndexError
+
+        inner = index
+        term_indices = []
+        for size in self.term_lens:
             if size == 0:
                 raise IndexError
+            inner, ti = divmod(inner, size)
+            term_indices.append(ti)
 
-            idx, offset = divmod(idx, size)
-            try:
-                result.append(terms[offset])
-            except IndexError:
-                raise IndexError
-
-        if idx != 0:
+        if inner != 0:
             raise IndexError
 
-        return ' '.join(result)
+        return term_indices
+
+    def __getitem__(self, index):
+        term_indices = self.decode_idx(index)
+        terms = [
+            self.term_lists[i][ti]
+            for i, ti in enumerate(term_indices)
+        ]
+        return ' '.join(terms)
 
 
 class LazyTieredKeywordSequence(Sequence):

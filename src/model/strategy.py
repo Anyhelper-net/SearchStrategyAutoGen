@@ -40,6 +40,8 @@ class SearchStrategy:
                 raise self.ZoomException('cannot zoom out')
 
         def value(self):
+            if self.index < 0:
+                raise IndexError
             return self.values[self.index]
 
         class ZoomException(RuntimeError):

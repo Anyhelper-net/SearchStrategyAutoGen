@@ -177,10 +177,35 @@ class Generator:
         else:
             self.logger.info('multiple cores')
 
-            values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
-            self.strategy.set_keywords_options(
-                SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
+            # values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
+            # self.strategy.set_keywords_options(
+            #     SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
+
             self.strategy.is_any_keywords = False
+            
+            keywords = []
+            for layer_max in range(2, len(self.keywords_groups)):
+                combs = LazyProductSequence(self.keywords_groups[:layer_max])
+                tmp_count = 0
+                tmp_comb = None
+                for comb in combs:
+                    self.strategy.set_keywords_options(SearchStrategy.Option((comb,), 0))
+                    self._set_strategy_count()
+                    self.logger.info(f'keywords <{comb}> count: {self.strategy.count}')
+
+                    if l <= self.strategy.count <= r:
+                        tmp_comb = comb
+                        break
+
+                    if self.strategy.count > tmp_count:
+                        tmp_count = self.strategy.count
+                        tmp_comb = comb
+                if tmp_comb:
+                    keywords.append(tmp_comb)
+                else:
+                    break
+            self.logger.info(f'keywords option {keywords} being set')
+            self.strategy.set_keywords_options(SearchStrategy.Option(keywords, 0))
 
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
@@ -205,10 +230,35 @@ class Generator:
         if self.position_type is self.PositionType.SingleCore:
             self.logger.info('single core')
 
-            values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
-            self.strategy.set_keywords_options(
-                SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
+            # values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
+            # self.strategy.set_keywords_options(
+            #     SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
+
             self.strategy.is_any_keywords = False
+
+            keywords = []
+            for layer_max in range(2, len(self.keywords_groups)):
+                combs = LazyProductSequence(self.keywords_groups[:layer_max])
+                tmp_count = 0
+                tmp_comb = None
+                for comb in combs:
+                    self.strategy.set_keywords_options(SearchStrategy.Option((comb,), 0))
+                    self._set_strategy_count()
+                    self.logger.info(f'keywords <{comb}> count: {self.strategy.count}')
+
+                    if l <= self.strategy.count <= r:
+                        tmp_comb = comb
+                        break
+
+                    if self.strategy.count > tmp_count:
+                        tmp_count = self.strategy.count
+                        tmp_comb = comb
+                if tmp_comb:
+                    keywords.append(tmp_comb)
+                else:
+                    break
+            self.logger.info(f'keywords option {keywords} being set')
+            self.strategy.set_keywords_options(SearchStrategy.Option(keywords, 0))
         else:
             self.logger.info('multiple cores')
 
@@ -304,6 +354,7 @@ class Generator:
                     before, after = self.strategy.zoom_out(key)
                     self.logger.info(f'based on <{id}> zoom out <{key}> from <{before}> into <{after}>')
             except SearchStrategy.Option.ZoomException:
+                next_keys.remove(key)
                 continue
 
             if self._dfs_strategy(next_keys, is_zoom_in, l, r):
