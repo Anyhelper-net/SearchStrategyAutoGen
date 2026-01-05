@@ -22,12 +22,22 @@ import copy
 from src.utils.logger import logger
 from src.utils.method import random_sleep
 from src.config.path import LOG_DIR
+import logging
 
 
 class Generator:
     class PositionType(Enum):
         SingleCore = '单核心岗位'
         MutiCore = '多核心岗位'
+
+    class GeneratorException(RuntimeError):
+        pass
+
+    class EmptyKeywordsException(GeneratorException):
+        pass
+
+    class EmptyCompanyStrategyException(GeneratorException):
+        pass
 
     def __init__(self, cookies, pid):
         self.logger = logger.getChild(f'strategy_generator_{pid}')
@@ -36,6 +46,7 @@ class Generator:
             maxBytes=1024 * 1024,
             backupCount=5
         )
+        handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
         self.logger.addHandler(handler)
 
         self.logger.info(f'building generator for pid:{pid}...')
@@ -133,8 +144,7 @@ class Generator:
 
     def dfs_strategy_company(self):
         if self.job_analysis.company.type != '明确列出名字':
-            self.logger.info('no target comp strategy')
-            return
+            raise self.EmptyCompanyStrategyException('no company strategy')
 
         self.logger.info('start comps strategy generation')
 
@@ -177,35 +187,7 @@ class Generator:
         else:
             self.logger.info('multiple cores')
 
-            # values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
-            # self.strategy.set_keywords_options(
-            #     SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
-
-            self.strategy.is_any_keywords = False
-
-            keywords = []
-            for layer_max in range(2, len(self.keywords_groups)):
-                combs = LazyProductSequence(self.keywords_groups[:layer_max])
-                tmp_count = 0
-                tmp_comb = None
-                for comb in combs:
-                    self.strategy.set_keywords_options(SearchStrategy.Option((comb,), 0))
-                    self._set_strategy_count()
-                    self.logger.info(f'keywords <{comb}> count: {self.strategy.count}')
-
-                    if l <= self.strategy.count <= r:
-                        tmp_comb = comb
-                        break
-
-                    if self.strategy.count > tmp_count:
-                        tmp_count = self.strategy.count
-                        tmp_comb = comb
-                if tmp_comb:
-                    keywords.append(tmp_comb)
-                else:
-                    break
-            self.logger.info(f'keywords option {keywords} being set')
-            self.strategy.set_keywords_options(SearchStrategy.Option(keywords, 0))
+            self._keywords_pre_check_set(l, r)
 
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
@@ -230,35 +212,7 @@ class Generator:
         if self.position_type is self.PositionType.SingleCore:
             self.logger.info('single core')
 
-            # values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
-            # self.strategy.set_keywords_options(
-            #     SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
-
-            self.strategy.is_any_keywords = False
-
-            keywords = []
-            for layer_max in range(2, len(self.keywords_groups)):
-                combs = LazyProductSequence(self.keywords_groups[:layer_max])
-                tmp_count = 0
-                tmp_comb = None
-                for comb in combs:
-                    self.strategy.set_keywords_options(SearchStrategy.Option((comb,), 0))
-                    self._set_strategy_count()
-                    self.logger.info(f'keywords <{comb}> count: {self.strategy.count}')
-
-                    if l <= self.strategy.count <= r:
-                        tmp_comb = comb
-                        break
-
-                    if self.strategy.count > tmp_count:
-                        tmp_count = self.strategy.count
-                        tmp_comb = comb
-                if tmp_comb:
-                    keywords.append(tmp_comb)
-                else:
-                    break
-            self.logger.info(f'keywords option {keywords} being set')
-            self.strategy.set_keywords_options(SearchStrategy.Option(keywords, 0))
+            self._keywords_pre_check_set(l, r)
         else:
             self.logger.info('multiple cores')
 
@@ -286,6 +240,76 @@ class Generator:
         #     return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
+
+    def _keywords_pre_check_set(self, l, r):
+        self.strategy.is_any_keywords = False
+
+        # values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
+        # self.strategy.set_keywords_options(
+        #     SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
+
+        keywords = []
+        # for layer_max in range(2, len(self.keywords_groups)):
+        #     combs = LazyProductSequence(self.keywords_groups[:layer_max])
+        #     tmp_count = 0
+        #     tmp_comb = None
+        #     for comb in combs:
+        #         self.strategy.set_keywords_options(SearchStrategy.Option((comb,), 0))
+        #         self._set_strategy_count()
+        #         self.logger.info(f'keywords <{comb}> count: {self.strategy.count}')
+        #
+        #         if l <= self.strategy.count <= r:
+        #             tmp_comb = comb
+        #             break
+        #
+        #         if self.strategy.count > tmp_count:
+        #             tmp_count = self.strategy.count
+        #             tmp_comb = comb
+        #     if tmp_comb:
+        #         keywords.append(tmp_comb)
+        #     else:
+        #         break
+
+        tmp_count = 0
+        tmp_comb = None
+        for keyword1 in self.keywords_groups[0].keywords_mapping:
+            for keyword2 in self.keywords_groups[1].keywords_mapping:
+                comb = keyword1 + ' ' + keyword2
+                self.strategy.set_keywords_options(SearchStrategy.Option((comb,), 0))
+                self._set_strategy_count()
+                self.logger.info(f'keywords <{comb}> count: {self.strategy.count}')
+                if l <= self.strategy.count <= r:
+                    tmp_comb = comb
+                    break
+                if self.strategy.count > tmp_count:
+                    tmp_count = self.strategy.count
+                    tmp_comb = comb
+        if tmp_comb:
+            keywords.append(tmp_comb)
+        else:
+            raise self.EmptyKeywordsException('no useful keywords comb')
+
+        for g in self.keywords_groups[2:]:
+            tmp_count = 0
+            tmp_comb = None
+            for keyword in g.keywords_mapping:
+                comb = keywords[-1] + ' ' + keyword
+                self.strategy.set_keywords_options(SearchStrategy.Option((comb,), 0))
+                self._set_strategy_count()
+                self.logger.info(f'keywords <{comb}> count: {self.strategy.count}')
+                if l <= self.strategy.count <= r:
+                    tmp_comb = comb
+                    break
+                if self.strategy.count > tmp_count:
+                    tmp_count = self.strategy.count
+                    tmp_comb = comb
+            if tmp_comb:
+                keywords.append(tmp_comb)
+            else:
+                break
+
+        self.logger.info(f'keywords option {keywords} being set')
+        self.strategy.set_keywords_options(SearchStrategy.Option(keywords, 0))
 
     # as keywords zooming is no longer line space after 3.1.0, _maxima_test should not be used anymore
     def _maxima_test(self, keys, is_zoom_in, l, r) -> bool:
@@ -398,21 +422,30 @@ class Generator:
 
     def run(self):
         # cores strategy
-        self.dfs_strategy_cores()
-        self._upload_strategy('cores')
+        try:
+            self.dfs_strategy_cores()
+            self._upload_strategy('cores')
+        except self.GeneratorException as e:
+            self.logger.warn(e)
 
         # company strategy
-        if self.job_analysis.company.type == '明确列出名字':
+        try:
             self.dfs_strategy_company()
             self._upload_strategy('comp')
-        else:
-            self.logger.warn('no target comp strategy\n')
+        except self.GeneratorException as e:
+            self.logger.warn(e)
 
         # rares strategy B & backup strategy
-        self._dfs_strategy_rares_b()
-        self._upload_strategy('rares_b')
+        try:
+            self._dfs_strategy_rares_b()
+            self._upload_strategy('rares_b')
+        except self.GeneratorException as e:
+            self.logger.warn(e)
 
         # backup
-        self._remove_current_keywords()
-        self._dfs_strategy_rares_b()
-        self._upload_strategy('backup')
+        try:
+            self._remove_current_keywords()
+            self._dfs_strategy_rares_b()
+            self._upload_strategy('backup')
+        except self.GeneratorException as e:
+            self.logger.warn(e)
