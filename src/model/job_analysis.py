@@ -49,7 +49,7 @@ class Analysis:
                                           tmp['detailed_category'], Tier(tmp['detailed_category_tier']))
         tmp = kwargs['TargetCompany']
         self.company = Analysis.TargetComp(tmp['type'],
-                                           tmp['companies'].split(',') if tmp['type'] == '明确列出名字' else [],
+                                           tmp['companies'].split(',') if tmp['type'] == '明确列出名字' else tmp['companies'],
                                            None if tmp['tier'] == '无' else Tier(tmp['tier']))
 
         tmp = kwargs['TargetLocation']

@@ -143,15 +143,20 @@ class Generator:
         # return self.strategy.count
 
     def dfs_strategy_company(self):
-        if self.job_analysis.company.type != '明确列出名字':
-            raise self.EmptyCompanyStrategyException('no company strategy')
-
         self.logger.info('start comps strategy generation')
 
         l, r = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
         self._set_default_strategy(r)
 
-        self.strategy.set_comp_name(' '.join(self.job_analysis.company.comps))
+        if self.job_analysis.company.type == '明确列出名字':
+            self.strategy.set_comp_name(' '.join(self.job_analysis.company.comps))
+        elif self.job_analysis.company.type == '明确列出范围':
+            msg = self.job_analysis.company.comps
+            resp = bot_io.send(msg, ENUM_MODEL_ID.COMP_RANGE2NAMES)
+            data = bot_io.parse(resp)
+            self.strategy.set_comp_name(data)
+        else:
+            raise self.EmptyCompanyStrategyException('no company strategy')
 
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
