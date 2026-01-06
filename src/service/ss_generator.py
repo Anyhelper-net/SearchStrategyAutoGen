@@ -434,10 +434,13 @@ class Generator:
                     pass
 
     def run(self):
+        total_count = 0
+
         # cores strategy
         try:
             self.dfs_strategy_cores()
             self._upload_strategy('cores')
+            total_count += self.strategy.count
         except self.GeneratorException as e:
             self.logger.warn(e)
 
@@ -445,6 +448,7 @@ class Generator:
         try:
             self.dfs_strategy_company()
             self._upload_strategy('comp')
+            total_count += self.strategy.count
         except self.GeneratorException as e:
             self.logger.warn(e)
 
@@ -452,6 +456,7 @@ class Generator:
         try:
             self._dfs_strategy_rares_b()
             self._upload_strategy('rares_b')
+            total_count += self.strategy.count
         except self.GeneratorException as e:
             self.logger.warn(e)
 
@@ -460,5 +465,27 @@ class Generator:
             self._remove_current_keywords()
             self._dfs_strategy_rares_b()
             self._upload_strategy('backup')
+            total_count += self.strategy.count
+        except self.GeneratorException as e:
+            self.logger.warn(e)
+
+        if total_count < 400:
+            self.strategy.filter_viewed = True
+        else:
+            return
+
+        # cores strategy
+        try:
+            self.dfs_strategy_cores()
+            self._upload_strategy('cores')
+            total_count += self.strategy.count
+        except self.GeneratorException as e:
+            self.logger.warn(e)
+
+        # company strategy
+        try:
+            self.dfs_strategy_company()
+            self._upload_strategy('comp')
+            total_count += self.strategy.count
         except self.GeneratorException as e:
             self.logger.warn(e)

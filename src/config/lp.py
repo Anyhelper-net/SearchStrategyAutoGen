@@ -12,7 +12,7 @@ from src.config.path import LP_DQS_CODE_PATH, LP_INDUSTRY_CODE_PATH
 
 SALARY_MAX_ZOOM_FACTOR = 1.5
 # DFS_STEP_MAX = math.inf
-DFS_STEP_MAX = 500
+DFS_STEP_MAX = 150
 
 
 class RangeTargetResumes(Enum):

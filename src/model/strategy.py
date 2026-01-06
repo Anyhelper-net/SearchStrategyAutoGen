@@ -160,35 +160,18 @@ class SearchStrategy:
         self.n_options['industry'] = SearchStrategy.Option(('', analysis.industry.core),
                                                            0 if analysis.industry.core_tier.tp is Tier.Type.Nice else 1)
 
+        # Others
+        self.filter_viewed = False
+
     def get_lp_local_storage(self):
-        r = deepcopy(TEMP_LP_SEARCH_PARAMS_INPUT_VO)
-        r['activeStatus'] = self.a_options['active_status'].value()
-        r['jobName'] = ' '.join(self.a_options['position_name'].value())
-        r['major'] = ' '.join(self.a_options['major'].value())
-        r['jobStability'] = self.a_options['stability'].value()
+        r = self.get_lp_payload_inner()
 
-        # r['wantDqs'] = ','.join(map(lambda x: Mapping.DQS_CODE_DICT[x], self.b_options['city'].value()))
-        r['wantDqsOut'] = [{'dqCode': Mapping.DQS_CODE_DICT[x], 'dqName': x} for x in self.b_options['city'].value() if
-                           x in Mapping.DQS_CODE_DICT]
-        r['wantSalaryHigh'] = str(self.b_options['max_salary'].value())
-        r['workYearsLow'] = str(self.b_options['working_years_min'].value())
-
-        r['languageSkills'] = Mapping.LAN_CODE_DICT[self.c_options['language'].value()]
-        r['ageHigh'] = str(self.c_options['max_age'].value())
-        r['sex'] = Mapping.SEX_CODE_DICT[self.c_options['sex'].value()]
-        r['eduLevels'] = Mapping.EDU_LEVEL_CODE_DICT[self.c_options['academic'].value()]
-        if self.c_options['college'] == '':
-            pass
-        elif self.c_options['college'] == '985/211':
-            r['schoolKindList'] = ["1", "2"]
-        elif self.c_options['college'] == '统招':
-            r['eduLevelTzCode'] = r['eduLevels'][-1]
-
-        r['compName'] = self.comp_name
-        r['compPeriod'] = self.d_options['comp_period'].value()
-
-        r['keyword'] = self.e_options['keywords'].value()
-        r['anyKeyword'] = '1' if self.is_any_keywords else '0'
+        dqs = [{'dqCode': Mapping.DQS_CODE_DICT[x], 'dqName': x} for x in self.b_options['city'].value() if
+               x in Mapping.DQS_CODE_DICT]
+        if self.filter_viewed:
+            r['nowDqsOut'] = dqs
+        else:
+            r['wantDqsOut'] = dqs
 
         try:
             r['industryArr'] = [{'code': Mapping.INDUSTRY_CODE_DICT[self.n_options['industry'].value()],
@@ -201,14 +184,19 @@ class SearchStrategy:
 
     def get_lp_payload_inner(self):
         r = deepcopy(TEMP_LP_SEARCH_PARAMS_INPUT_VO)
+        r['filterViewed'] = self.filter_viewed
+
         r['activeStatus'] = self.a_options['active_status'].value()
         r['jobName'] = ' '.join(self.a_options['position_name'].value())
         r['major'] = ' '.join(self.a_options['major'].value())
         r['jobStability'] = self.a_options['stability'].value()
 
-        # r['wantDqs'] = ','.join(map(lambda x: Mapping.DQS_CODE_DICT[x], self.b_options['city'].value()))
-        r['wantDqs'] = ','.join(
-            [Mapping.DQS_CODE_DICT[x] for x in self.b_options['city'].value() if x in Mapping.DQS_CODE_DICT])
+        dqs = ','.join([Mapping.DQS_CODE_DICT[x] for x in self.b_options['city'].value() if x in Mapping.DQS_CODE_DICT])
+        if self.filter_viewed:
+            r['nowDqs'] = dqs
+        else:
+            r['wantDqs'] = dqs
+
         r['wantSalaryHigh'] = str(self.b_options['max_salary'].value())
         r['workYearsLow'] = str(self.b_options['working_years_min'].value())
 
