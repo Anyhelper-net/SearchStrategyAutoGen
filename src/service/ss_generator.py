@@ -67,6 +67,8 @@ class Generator:
         self._parse_job_analysis(data1, data2)
         self._parse_hard_reqs(data1)
 
+        self.total_api_acc_num = 0
+
         # self._set_default_strategy()
 
     def _get_position_info(self):
@@ -139,7 +141,13 @@ class Generator:
         self.trace = []
 
     def _set_strategy_count(self):
-        self.strategy.count = self.lp_service.get_resume_count(self.strategy.get_lp_payload_inner())
+        self.total_api_acc_num += 1
+        try:
+            self.strategy.count = self.lp_service.get_resume_count(self.strategy.get_lp_payload_inner())
+        except LpService.LpHumanRobotVerification:
+            self.logger.warn(f'waiting human_robot verification, total api acc: <{self.total_api_acc_num}>')
+            self.lp_service.proxy.human_robot_verification()
+            self.strategy.count = self.lp_service.get_resume_count(self.strategy.get_lp_payload_inner())
         # return self.strategy.count
 
     def dfs_strategy_company(self):
@@ -163,9 +171,9 @@ class Generator:
 
         keys = self.strategy.get_option_keys('DCBA' if is_zoom_in else 'DABC')
 
-        # if not self._maxima_test(keys, is_zoom_in, l, r):
-        #     self.logger.info('cant zoom into legal range')
-        #     return
+        if not self._maxima_test(keys, is_zoom_in, l, r):
+            self.logger.info('cant zoom into legal range')
+            return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
@@ -202,9 +210,9 @@ class Generator:
         else:
             keys = self.strategy.get_option_keys('ECBA' if is_zoom_in else 'EABCN')
 
-        # if not self._maxima_test(keys, is_zoom_in, l, r):
-        #     self.logger.info('cant zoom into legal range')
-        #     return
+        if not self._maxima_test(keys, is_zoom_in, l, r):
+            self.logger.info('cant zoom into legal range')
+            return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
@@ -240,9 +248,9 @@ class Generator:
         else:
             keys = self.strategy.get_option_keys('CBA' if is_zoom_in else 'ABCN')
 
-        # if not self._maxima_test(keys, is_zoom_in, l, r):
-        #     self.logger.warn('cant zoom into legal range')
-        #     return
+        if not self._maxima_test(keys, is_zoom_in, l, r):
+            self.logger.warn('cant zoom into legal range')
+            return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 

@@ -18,6 +18,9 @@ class LpService:
             super().__init__(resp.text)
             self.resp = resp
 
+    class LpHumanRobotVerification(LpServiceException):
+        pass
+
     def __init__(self, cookies):
         try:
             self.proxy = LpUserProxy(cookies)
@@ -33,7 +36,6 @@ class LpService:
                 return data['data']['totalCnt']
             except KeyError:
                 if resp.text == '{"flag":0}':
-                    lp_service_logger.warn('waiting human_robot verification')
-                    self.proxy.human_robot_verification()
+                    raise LpService.LpHumanRobotVerification(resp)
                 else:
                     raise LpService.LpServiceException(resp)
