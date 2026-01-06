@@ -150,7 +150,13 @@ class Generator:
             self.strategy.count = self.lp_service.get_resume_count(self.strategy.get_lp_payload_inner())
         # return self.strategy.count
 
-    def dfs_strategy_company(self):
+    def _select_strategy(self, l, r):
+        if l <= self.strategy.count <= r:
+            return
+        tmp = min(self.trace, key=lambda x: abs(x['count'] - r))
+        self.strategy.load(tmp)
+
+    def _dfs_strategy_company(self):
         self.logger.info('start comps strategy generation')
 
         l, r = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
@@ -177,7 +183,9 @@ class Generator:
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
-    def dfs_strategy_cores(self):
+        self._select_strategy(l, r)
+
+    def _dfs_strategy_cores(self):
         self.logger.info('start cores strategy generation')
 
         l, r = RangeTargetResumes.A.value
@@ -216,6 +224,8 @@ class Generator:
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
+        self._select_strategy(l, r)
+
     def _dfs_strategy_rares_b(self):
         self.logger.info('start rares strategy B generation')
 
@@ -253,6 +263,8 @@ class Generator:
             return
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
+
+        self._select_strategy(l, r)
 
     def _keywords_pre_check_set(self, l, r):
         self.strategy.is_any_keywords = False
@@ -365,8 +377,6 @@ class Generator:
         id = len(self.trace)
         self.logger.info(f'<{id}>: {self.strategy}')
         if id > limitation:
-            tmp = min(self.trace, key=lambda x: abs(x['count'] - r))
-            self.strategy.load(tmp)
             return True
 
         if is_zoom_in:
@@ -438,7 +448,7 @@ class Generator:
 
         # cores strategy
         try:
-            self.dfs_strategy_cores()
+            self._dfs_strategy_cores()
             self._upload_strategy('cores')
             total_count += self.strategy.count
         except self.GeneratorException as e:
@@ -446,7 +456,7 @@ class Generator:
 
         # company strategy
         try:
-            self.dfs_strategy_company()
+            self._dfs_strategy_company()
             self._upload_strategy('comp')
             total_count += self.strategy.count
         except self.GeneratorException as e:
@@ -476,7 +486,7 @@ class Generator:
 
         # cores strategy
         try:
-            self.dfs_strategy_cores()
+            self._dfs_strategy_cores()
             self._upload_strategy('cores')
             total_count += self.strategy.count
         except self.GeneratorException as e:
@@ -484,7 +494,7 @@ class Generator:
 
         # company strategy
         try:
-            self.dfs_strategy_company()
+            self._dfs_strategy_company()
             self._upload_strategy('comp')
             total_count += self.strategy.count
         except self.GeneratorException as e:
