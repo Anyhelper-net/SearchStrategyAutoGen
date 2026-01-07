@@ -8,17 +8,21 @@ import json
 import re
 import math
 from enum import Enum
-from src.config.path import LP_DQS_CODE_PATH, LP_INDUSTRY_CODE_PATH
+from src.config.path import LP_DQS_CODE_PATH, LP_INDUSTRY_CODE_PATH, LP_CFG_PATH
 
-SALARY_MAX_ZOOM_FACTOR = 1.5
-# DFS_STEP_MAX = math.inf
-DFS_STEP_MAX = 150
+cfg = None
+
+with open(LP_CFG_PATH, 'r') as f:
+    cfg = json.load(f)
+
+DFS_STEP_MAX = cfg.get('max_step', math.inf)
+SALARY_MAX_ZOOM_FACTOR = cfg.get('salary_max_zoom_factor', 1.5)
 
 
 class RangeTargetResumes(Enum):
-    A = (150, 250)
-    B = (50, 150)
-    C = (50, math.inf)
+    A = cfg['range'].get('A', (150, 250))
+    B = cfg['range'].get('B', (50, 150))
+    C = cfg['range'].get('C', (50, math.inf))
 
 
 class Mapping:

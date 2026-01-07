@@ -10,7 +10,7 @@ build/
 cfg/
 data/
 log/
-resource/
+resource/chromedriver.exe
 test/
 save/
 cookies/

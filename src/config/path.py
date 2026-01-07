@@ -33,5 +33,6 @@ LP_DQS_CODE_PATH = os.path.join(RSC_DIR, 'lp_dqs_code.json')
 LP_INDUSTRY_CODE_PATH = os.path.join(RSC_DIR, 'lp_industry_code.json')
 WS_CFG_PATH = os.path.join(RSC_DIR, 'ws_cfg.json')
 CHROME_DRIVER_PATH = os.path.join(RSC_DIR, 'chromedriver.exe')
+LP_CFG_PATH = os.path.join(RSC_DIR, 'lp_cfg.json')
 
 print(f'Root Path: {ROOT_PATH}\n')
