@@ -116,8 +116,14 @@ class SearchStrategy:
         a_options['stability'] = SearchStrategy.Option(('', '1'), 0)
 
         # B
-        b_options['city'] = SearchStrategy.Option(
-            (analysis.location.nearby, analysis.location.default, analysis.location.best_cities), 1)
+        tmp = [analysis.location.default]
+        tmp_idx = 0
+        if analysis.location.nearby != analysis.location.default:
+            tmp = [analysis.location.nearby] + tmp
+            tmp_idx += 1
+        if analysis.location.best_cities != analysis.location.default:
+            tmp.append(analysis.location.best_cities)
+        b_options['city'] = SearchStrategy.Option(tuple(tmp), tmp_idx)
         if hard_reqs.salary_max is None:
             b_options['max_salary'] = SearchStrategy.Option(('',), 0)
         else:
