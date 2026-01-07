@@ -155,7 +155,7 @@ class Generator:
         tmp = min(self.trace, key=lambda x: abs(x['count'] - r))
         self.strategy.load(tmp)
 
-    def _dfs_strategy_company(self):
+    def _preset_strategy_company(self):
         self.logger.info('start comps strategy generation')
 
         l, r = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
@@ -171,6 +171,11 @@ class Generator:
         else:
             raise self.EmptyCompanyStrategyException('no company strategy')
 
+        return l, r
+
+    def _dfs_strategy_company(self):
+        l, r = self._preset_strategy_company()
+
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
 
@@ -184,7 +189,7 @@ class Generator:
 
         self._select_strategy(l, r)
 
-    def _dfs_strategy_cores(self):
+    def _preset_strategy_cores(self):
         self.logger.info('start cores strategy generation')
 
         l, r = RangeTargetResumes.A.value
@@ -209,6 +214,11 @@ class Generator:
 
             self._keywords_pre_check_set(l, r)
 
+        return l, r
+
+    def _dfs_strategy_cores(self):
+        l, r = self._preset_strategy_cores()
+
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
 
@@ -225,7 +235,7 @@ class Generator:
 
         self._select_strategy(l, r)
 
-    def _dfs_strategy_rares_b(self):
+    def _preset_strategy_rares_b(self):
         self.logger.info('start rares strategy B generation')
 
         l, r = RangeTargetResumes.B.value
@@ -245,7 +255,6 @@ class Generator:
             keywords = []
             for group in self.keywords_groups:
                 if group.tier.tp is Tier.Type.Must or group.tier.tp is Tier.Type.Strong:
-                    # keywords += group.keywords
                     keywords += group.keywords_mapping
             keywords = ' '.join(keywords)
 
@@ -255,6 +264,44 @@ class Generator:
 
         # restore temp change
         self.keywords_groups = keywords_group_backup
+
+        return l, r
+
+    def _preset_strategy_rares_c(self):
+        self.logger.info('start rares strategy C generation')
+
+        l, r = RangeTargetResumes.C.value
+        self._set_default_strategy(r)
+
+        keywords = []
+        for group in self.keywords_groups:
+            if group.is_rare:
+                keywords += group.keywords_mapping
+        keywords = ' '.join(keywords)
+
+        keywords = SearchStrategy.Option((keywords,), 0)
+        self.strategy.set_keywords_options(keywords)
+        self.strategy.is_any_keywords = True
+
+        return l, r
+
+    def _dfs_strategy_rares_c(self):
+        l, r = self._preset_strategy_rares_c()
+
+        self._set_strategy_count()
+        is_zoom_in = self.strategy.count > r
+        keys = self.strategy.get_option_keys('CBA' if is_zoom_in else 'ABCN')
+
+        if not self._maxima_test(keys, is_zoom_in, l, r):
+            self.logger.warn('cant zoom into legal range')
+            return
+
+        self._dfs_strategy(keys, is_zoom_in, l, r)
+
+        self._select_strategy(l, r)
+
+    def _dfs_strategy_rares_b(self):
+        l, r = self._preset_strategy_rares_b()
 
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
@@ -474,13 +521,24 @@ class Generator:
         except self.GeneratorException as e:
             self.logger.warn(e)
 
-        # rares strategy B & backup strategy
+        # rares strategy B
         try:
             if IS_REACT_BRAIN_ACTIVE:
                 self._brain_controlled_rares_b_strategy()
             else:
                 self._dfs_strategy_rares_b()
             self._upload_strategy('rares_b')
+            total_count += self.strategy.count
+        except self.GeneratorException as e:
+            self.logger.warn(e)
+
+        # rares strategy C
+        try:
+            if IS_REACT_BRAIN_ACTIVE:
+                self._brain_controlled_rares_c_strategy()
+            else:
+                self._dfs_strategy_rares_c()
+            self._upload_strategy('rares_c')
             total_count += self.strategy.count
         except self.GeneratorException as e:
             self.logger.warn(e)
@@ -531,91 +589,25 @@ class Generator:
         return data['action'], data['data']
 
     def _brain_controlled_cores_strategy(self):
-        self.logger.info('start cores strategy generation')
-
-        l, r = RangeTargetResumes.A.value
-        self._set_default_strategy(r)
-
-        if self.position_type is self.PositionType.SingleCore:
-            self.logger.info('single core')
-
-            keywords = []
-            for group in self.keywords_groups:
-                if group.tier.tp is Tier.Type.Must:
-                    # keywords += group.keywords
-                    keywords += group.keywords_mapping
-            keywords = ' '.join(keywords)
-            keywords = SearchStrategy.Option((keywords,), 0)
-            self.strategy.set_keywords_options(keywords)
-            self.strategy.is_any_keywords = True
-
-        # elif self.position_type is self.PositionType.MutiCore:
-        else:
-            self.logger.info('multiple cores')
-
-            self._keywords_pre_check_set(l, r)
+        l, r = self._preset_strategy_cores()
 
         self._brain_controlled_zoom(l, r)
         self._select_strategy(l, r)
 
     def _brain_controlled_comp_strategy(self):
-        self.logger.info('start cores strategy generation')
-
-        l, r = RangeTargetResumes.A.value
-        self._set_default_strategy(r)
-
-        if self.position_type is self.PositionType.SingleCore:
-            self.logger.info('single core')
-
-            keywords = []
-            for group in self.keywords_groups:
-                if group.tier.tp is Tier.Type.Must:
-                    # keywords += group.keywords
-                    keywords += group.keywords_mapping
-            keywords = ' '.join(keywords)
-            keywords = SearchStrategy.Option((keywords,), 0)
-            self.strategy.set_keywords_options(keywords)
-            self.strategy.is_any_keywords = True
-
-        # elif self.position_type is self.PositionType.MutiCore:
-        else:
-            self.logger.info('multiple cores')
-
-            self._keywords_pre_check_set(l, r)
+        l, r = self._preset_strategy_company()
 
         self._brain_controlled_zoom(l, r)
         self._select_strategy(l, r)
 
     def _brain_controlled_rares_b_strategy(self):
-        self.logger.info('start rares strategy B generation')
+        l, r = self._preset_strategy_rares_b()
 
-        l, r = RangeTargetResumes.B.value
-        self._set_default_strategy(r)
+        self._brain_controlled_zoom(l, r)
+        self._select_strategy(l, r)
 
-        # temp change
-        keywords_group_backup = self.keywords_groups
-        self.keywords_groups = [g for g in self.keywords_groups if g.is_rare]
-
-        if self.position_type is self.PositionType.SingleCore:
-            self.logger.info('single core')
-
-            self._keywords_pre_check_set(l, r)
-        else:
-            self.logger.info('multiple cores')
-
-            keywords = []
-            for group in self.keywords_groups:
-                if group.tier.tp is Tier.Type.Must or group.tier.tp is Tier.Type.Strong:
-                    # keywords += group.keywords
-                    keywords += group.keywords_mapping
-            keywords = ' '.join(keywords)
-
-            keywords = SearchStrategy.Option((keywords,), 0)
-            self.strategy.set_keywords_options(keywords)
-            self.strategy.is_any_keywords = True
-
-        # restore temp change
-        self.keywords_groups = keywords_group_backup
+    def _brain_controlled_rares_c_strategy(self):
+        l, r = self._preset_strategy_rares_c()
 
         self._brain_controlled_zoom(l, r)
         self._select_strategy(l, r)
