@@ -545,9 +545,9 @@ class Generator:
 
         msg = {
             'id': 0,
-            'is_zoom_in': None,
-            'based_on': None,
-            'key': None,
+            # 'is_zoom_in': None,
+            # 'based_on': None,
+            # 'key': None,
             'count': self.strategy.count
         }
         self.logger.info(json.dumps(msg, ensure_ascii=False))
@@ -568,11 +568,12 @@ class Generator:
             elif action == 'zoom':
                 is_zoom_in = data['is_zoom_in']
                 key = data['key']
+                before, after = None, None
                 try:
                     if is_zoom_in:
-                        self.strategy.zoom_in(key)
+                        before, after = self.strategy.zoom_in(key)
                     else:
-                        self.strategy.zoom_out(key)
+                        before, after = self.strategy.zoom_out(key)
                 except self.strategy.Option.ZoomException:
                     msg = f'try to zoom {'in' if is_zoom_in else 'out'} <{key}> based on <{current_idx}> failed cuz already at the border'
                     self.logger.info(msg)
@@ -582,13 +583,17 @@ class Generator:
                 self.trace.append(self.strategy.export())
                 msg = {
                     'id': len(self.trace) - 1,
+                    'count': self.strategy.count,
                     'is_zoom_in': is_zoom_in,
                     'based_on': current_idx,
                     'key': key,
-                    'count': self.strategy.count
+                    'before': before,
+                    'after': after,
                 }
-                self.logger.info(json.dumps(msg, ensure_ascii=False))
                 history.append(msg)
+                self.logger.info(json.dumps(msg, ensure_ascii=False))
+                msg.pop('before')
+                msg.pop('after')
                 current_idx = len(self.trace) - 1
 
     def run_react(self):
