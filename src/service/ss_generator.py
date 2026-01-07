@@ -443,17 +443,14 @@ class Generator:
                     pass
 
     def run(self):
-        if IS_REACT_BRAIN_ACTIVE:
-            self.run_react()
-        else:
-            self.run_dfs()
-
-    def run_dfs(self):
         total_count = 0
 
         # cores strategy
         try:
-            self._dfs_strategy_cores()
+            if IS_REACT_BRAIN_ACTIVE:
+                self._brain_controlled_cores_strategy()
+            else:
+                self._dfs_strategy_cores()
             self._upload_strategy('cores')
             total_count += self.strategy.count
         except self.GeneratorException as e:
@@ -461,7 +458,10 @@ class Generator:
 
         # company strategy
         try:
-            self._dfs_strategy_company()
+            if IS_REACT_BRAIN_ACTIVE:
+                self._brain_controlled_comp_strategy()
+            else:
+                self._dfs_strategy_company()
             self._upload_strategy('comp')
             total_count += self.strategy.count
         except self.GeneratorException as e:
@@ -469,7 +469,10 @@ class Generator:
 
         # rares strategy B & backup strategy
         try:
-            self._dfs_strategy_rares_b()
+            if IS_REACT_BRAIN_ACTIVE:
+                self._brain_controlled_rares_b_strategy()
+            else:
+                self._dfs_strategy_rares_b()
             self._upload_strategy('rares_b')
             total_count += self.strategy.count
         except self.GeneratorException as e:
@@ -478,7 +481,10 @@ class Generator:
         # backup
         try:
             self._remove_current_keywords()
-            self._dfs_strategy_rares_b()
+            if IS_REACT_BRAIN_ACTIVE:
+                self._brain_controlled_rares_b_strategy()
+            else:
+                self._dfs_strategy_rares_b()
             self._upload_strategy('backup')
             total_count += self.strategy.count
         except self.GeneratorException as e:
@@ -491,17 +497,21 @@ class Generator:
 
         # cores strategy
         try:
-            self._dfs_strategy_cores()
+            if IS_REACT_BRAIN_ACTIVE:
+                self._brain_controlled_cores_strategy()
+            else:
+                self._dfs_strategy_cores()
             self._upload_strategy('cores')
-            total_count += self.strategy.count
         except self.GeneratorException as e:
             self.logger.warn(e)
 
         # company strategy
         try:
-            self._dfs_strategy_company()
+            if IS_REACT_BRAIN_ACTIVE:
+                self._brain_controlled_comp_strategy()
+            else:
+                self._dfs_strategy_company()
             self._upload_strategy('comp')
-            total_count += self.strategy.count
         except self.GeneratorException as e:
             self.logger.warn(e)
 
@@ -539,6 +549,62 @@ class Generator:
             self._keywords_pre_check_set(l, r)
 
         self._brain_controlled_zoom(l, r)
+        self._select_strategy(l, r)
+
+    def _brain_controlled_comp_strategy(self):
+        self.logger.info('start cores strategy generation')
+
+        l, r = RangeTargetResumes.A.value
+        self._set_default_strategy(r)
+
+        if self.position_type is self.PositionType.SingleCore:
+            self.logger.info('single core')
+
+            keywords = []
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Must:
+                    # keywords += group.keywords
+                    keywords += group.keywords_mapping
+            keywords = ' '.join(keywords)
+            keywords = SearchStrategy.Option((keywords,), 0)
+            self.strategy.set_keywords_options(keywords)
+            self.strategy.is_any_keywords = True
+
+        # elif self.position_type is self.PositionType.MutiCore:
+        else:
+            self.logger.info('multiple cores')
+
+            self._keywords_pre_check_set(l, r)
+
+        self._brain_controlled_zoom(l, r)
+        self._select_strategy(l, r)
+
+    def _brain_controlled_rares_b_strategy(self):
+        self.logger.info('start rares strategy B generation')
+
+        l, r = RangeTargetResumes.B.value
+        self._set_default_strategy(r)
+
+        if self.position_type is self.PositionType.SingleCore:
+            self.logger.info('single core')
+
+            self._keywords_pre_check_set(l, r)
+        else:
+            self.logger.info('multiple cores')
+
+            keywords = []
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Must or group.tier.tp is Tier.Type.Strong:
+                    # keywords += group.keywords
+                    keywords += group.keywords_mapping
+            keywords = ' '.join(keywords)
+
+            keywords = SearchStrategy.Option((keywords,), 0)
+            self.strategy.set_keywords_options(keywords)
+            self.strategy.is_any_keywords = True
+
+        self._brain_controlled_zoom(l, r)
+        self._select_strategy(l, r)
 
     def _brain_controlled_zoom(self, l, r):
         self._set_strategy_count()
@@ -583,9 +649,9 @@ class Generator:
                 self.trace.append(self.strategy.export())
                 msg = {
                     'id': len(self.trace) - 1,
+                    'based_on': current_idx,
                     'count': self.strategy.count,
                     'is_zoom_in': is_zoom_in,
-                    'based_on': current_idx,
                     'key': key,
                     'before': before,
                     'after': after,
@@ -595,7 +661,3 @@ class Generator:
                 msg.pop('before')
                 msg.pop('after')
                 current_idx = len(self.trace) - 1
-
-    def run_react(self):
-        self._brain_controlled_cores_strategy()
-        pass
