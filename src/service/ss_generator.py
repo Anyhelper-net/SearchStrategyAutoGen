@@ -506,7 +506,7 @@ class Generator:
             self.logger.warn(e)
 
     @staticmethod
-    def _zoom_brain_communication(l, r, history):
+    def _react_brain_communication(l, r, history):
         msg = {'l': l, 'r': r, 'history': history}
         resp = bot_io.send(json.dumps(msg, ensure_ascii=False), ENUM_MODEL_ID.ZOOM_BRAIN)
         data = bot_io.parse(resp)
@@ -538,6 +538,9 @@ class Generator:
 
             self._keywords_pre_check_set(l, r)
 
+        self._brain_controlled_zoom(l, r)
+
+    def _brain_controlled_zoom(self, l, r):
         self._set_strategy_count()
 
         msg = {
@@ -553,7 +556,7 @@ class Generator:
         self.trace.append(self.strategy.export())
 
         while len(self.trace) < DFS_STEP_MAX:
-            action, data = self._zoom_brain_communication(l, r, history)
+            action, data = self._react_brain_communication(l, r, history)
             if action == 'stop':
                 break
             elif action == 'back':
@@ -578,7 +581,7 @@ class Generator:
                 self._set_strategy_count()
                 self.trace.append(self.strategy.export())
                 msg = {
-                    'id': len(self.trace),
+                    'id': len(self.trace) - 1,
                     'is_zoom_in': is_zoom_in,
                     'based_on': current_idx,
                     'key': key,

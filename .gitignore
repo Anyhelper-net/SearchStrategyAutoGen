@@ -1,6 +1,5 @@
 *123.py
 *.log
-*test.py
 test*.py
 
 __pycache__

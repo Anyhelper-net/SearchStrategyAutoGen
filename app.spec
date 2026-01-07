@@ -32,9 +32,9 @@ exe1 = EXE(
     console=True,
 )
 
-# ---------- test.py ----------
+# ---------- manual_acc.py ----------
 a2 = Analysis(
-    ['test.py'],
+    ['manual_acc.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -54,7 +54,7 @@ exe2 = EXE(
     a2.scripts,
     [],
     exclude_binaries=True,
-    name='test',
+    name='manual_acc',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
