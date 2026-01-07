@@ -8,6 +8,7 @@
 from src.io.lp import LpUserProxy
 from src.utils.method import random_sleep
 from src.utils.logger import logger
+from src.config.lp import LP_RANDOM_SLEEP_RANGE
 
 lp_service_logger = logger.getChild('lp_service')
 
@@ -29,7 +30,7 @@ class LpService:
 
     def get_resume_count(self, inner_payload, retry=1) -> int:
         for _ in range(retry + 1):
-            random_sleep()
+            random_sleep(LP_RANDOM_SLEEP_RANGE)
             resp = self.proxy.search_resumes(inner_payload)
             data = resp.json()
             try:

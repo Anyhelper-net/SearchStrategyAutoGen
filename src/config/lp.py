@@ -9,6 +9,7 @@ import re
 import math
 from enum import Enum
 from src.config.path import LP_DQS_CODE_PATH, LP_INDUSTRY_CODE_PATH, LP_CFG_PATH
+from src.config.http import GLOBAL_REQ_TIME_GAP_RANGE
 
 cfg = None
 
@@ -17,6 +18,8 @@ with open(LP_CFG_PATH, 'r') as f:
 
 DFS_STEP_MAX = cfg.get('max_step', math.inf)
 SALARY_MAX_ZOOM_FACTOR = cfg.get('salary_max_zoom_factor', 1.5)
+IS_REACT_BRAIN_ACTIVE = cfg.get('is_react_brain_active', False)
+LP_RANDOM_SLEEP_RANGE = cfg.get('random_sleep_range', GLOBAL_REQ_TIME_GAP_RANGE)
 
 
 class RangeTargetResumes(Enum):

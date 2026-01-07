@@ -11,7 +11,7 @@ import os
 
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 
-from src.config.lp import RangeTargetResumes, DFS_STEP_MAX
+from src.config.lp import RangeTargetResumes, DFS_STEP_MAX, IS_REACT_BRAIN_ACTIVE
 from src.service.lp import LpService
 import src.io.bot as bot_io
 import src.io.anyhelper as ah_io
@@ -20,7 +20,6 @@ from typing import List
 from src.model import *
 import copy
 from src.utils.logger import logger
-from src.utils.method import random_sleep
 from src.config.path import LOG_DIR
 import logging
 
@@ -444,6 +443,12 @@ class Generator:
                     pass
 
     def run(self):
+        if IS_REACT_BRAIN_ACTIVE:
+            self.run_react()
+        else:
+            self.run_dfs()
+
+    def run_dfs(self):
         total_count = 0
 
         # cores strategy
@@ -499,3 +504,90 @@ class Generator:
             total_count += self.strategy.count
         except self.GeneratorException as e:
             self.logger.warn(e)
+
+    @staticmethod
+    def _zoom_brain_communication(l, r, history):
+        msg = {'l': l, 'r': r, 'history': history}
+        resp = bot_io.send(json.dumps(msg, ensure_ascii=False), ENUM_MODEL_ID.ZOOM_BRAIN)
+        data = bot_io.parse(resp)
+        data = json.loads(data)
+        return data['action'], data['data']
+
+    def _brain_controlled_cores_strategy(self):
+        self.logger.info('start cores strategy generation')
+
+        l, r = RangeTargetResumes.A.value
+        self._set_default_strategy(r)
+
+        if self.position_type is self.PositionType.SingleCore:
+            self.logger.info('single core')
+
+            keywords = []
+            for group in self.keywords_groups:
+                if group.tier.tp is Tier.Type.Must:
+                    # keywords += group.keywords
+                    keywords += group.keywords_mapping
+            keywords = ' '.join(keywords)
+            keywords = SearchStrategy.Option((keywords,), 0)
+            self.strategy.set_keywords_options(keywords)
+            self.strategy.is_any_keywords = True
+
+        # elif self.position_type is self.PositionType.MutiCore:
+        else:
+            self.logger.info('multiple cores')
+
+            self._keywords_pre_check_set(l, r)
+
+        self._set_strategy_count()
+
+        msg = {
+            'id': 0,
+            'is_zoom_in': None,
+            'based_on': None,
+            'key': None,
+            'count': self.strategy.count
+        }
+        self.logger.info(json.dumps(msg, ensure_ascii=False))
+        history = [msg]
+        current_idx = 0
+        self.trace.append(self.strategy.export())
+
+        while len(self.trace) < DFS_STEP_MAX:
+            action, data = self._zoom_brain_communication(l, r, history)
+            if action == 'stop':
+                break
+            elif action == 'back':
+                current_idx = data
+                self.strategy.load(self.trace[current_idx])
+                msg = {'action': action, 'id': current_idx}
+                self.logger.info(json.dumps(msg, ensure_ascii=False))
+                history.append(msg)
+            elif action == 'zoom':
+                is_zoom_in = data['is_zoom_in']
+                key = data['key']
+                try:
+                    if is_zoom_in:
+                        self.strategy.zoom_in(key)
+                    else:
+                        self.strategy.zoom_out(key)
+                except self.strategy.Option.ZoomException:
+                    msg = f'try to zoom {'in' if is_zoom_in else 'out'} <{key}> based on <{current_idx}> failed cuz already at the border'
+                    self.logger.info(msg)
+                    history.append(msg)
+                    continue
+                self._set_strategy_count()
+                self.trace.append(self.strategy.export())
+                msg = {
+                    'id': len(self.trace),
+                    'is_zoom_in': is_zoom_in,
+                    'based_on': current_idx,
+                    'key': key,
+                    'count': self.strategy.count
+                }
+                self.logger.info(json.dumps(msg, ensure_ascii=False))
+                history.append(msg)
+                current_idx = len(self.trace) - 1
+
+    def run_react(self):
+        self._brain_controlled_cores_strategy()
+        pass

@@ -5,5 +5,7 @@
     "A": [150, 250],
     "B": [50, 150],
     "C": [50, 3000]
-  }
+  },
+  "is_react_brain_active": true,
+  "random_sleep_range": [5, 10]
 }
