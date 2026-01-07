@@ -275,7 +275,7 @@ class Generator:
 
         keywords = []
         for group in self.keywords_groups:
-            if group.is_rare:
+            if group.is_rare and group.tier.tp is Tier.Type.Nice:
                 keywords += group.keywords_mapping
         keywords = ' '.join(keywords)
 
