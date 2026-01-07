@@ -592,6 +592,10 @@ class Generator:
         l, r = RangeTargetResumes.B.value
         self._set_default_strategy(r)
 
+        # temp change
+        keywords_group_backup = self.keywords_groups
+        self.keywords_groups = [g for g in self.keywords_groups if g.is_rare]
+
         if self.position_type is self.PositionType.SingleCore:
             self.logger.info('single core')
 
@@ -609,6 +613,9 @@ class Generator:
             keywords = SearchStrategy.Option((keywords,), 0)
             self.strategy.set_keywords_options(keywords)
             self.strategy.is_any_keywords = True
+
+        # restore temp change
+        self.keywords_groups = keywords_group_backup
 
         self._brain_controlled_zoom(l, r)
         self._select_strategy(l, r)
