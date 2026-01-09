@@ -158,6 +158,9 @@ class Generator:
     def _preset_strategy_company(self):
         self.logger.info('start comps strategy generation')
 
+        l, r, t = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
+        self._set_default_strategy(t)
+
         if self.job_analysis.company.type == '明确列出名字':
             self.strategy.set_comp_name(' '.join(self.job_analysis.company.comps))
         elif self.job_analysis.company.type == '明确列出范围':
@@ -167,9 +170,6 @@ class Generator:
             self.strategy.set_comp_name(data)
         else:
             raise self.EmptyCompanyStrategyException('no company strategy')
-
-        l, r, t = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
-        self._set_default_strategy(t)
 
         return l, r, t
 
