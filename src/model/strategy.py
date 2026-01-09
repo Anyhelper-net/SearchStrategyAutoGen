@@ -80,7 +80,7 @@ class SearchStrategy:
     def __init__(self, hard_reqs: HardRequirements, analysis: Analysis):
 
         self.count = None
-        self.r_limit = None
+        self.target = None
 
         a_options = dict[str: SearchStrategy.Option]()
         b_options = dict[str: SearchStrategy.Option]()

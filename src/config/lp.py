@@ -23,9 +23,9 @@ LP_RANDOM_SLEEP_RANGE = cfg.get('random_sleep_range', GLOBAL_REQ_TIME_GAP_RANGE)
 
 
 class RangeTargetResumes(Enum):
-    A = cfg['range'].get('A', (150, 250))
-    B = cfg['range'].get('B', (50, 150))
-    C = cfg['range'].get('C', (50, math.inf))
+    A = cfg['range'].get('A', (150, 250, 200))
+    B = cfg['range'].get('B', (50, 150, 100))
+    C = cfg['range'].get('C', (50, math.inf, 50))
 
 
 class Mapping:

@@ -134,9 +134,9 @@ class Generator:
         kwargs = {k: v for k, v in data['results'][0].items() if k in HardRequirements.__annotations__}
         self.hard_reqs = HardRequirements(**kwargs)
 
-    def _set_default_strategy(self, r_limit):
+    def _set_default_strategy(self, t):
         self.strategy = SearchStrategy(self.hard_reqs, self.job_analysis)
-        self.strategy.r_limit = r_limit
+        self.strategy.target = t
         self.trace = []
 
     def _set_strategy_count(self):
@@ -149,10 +149,10 @@ class Generator:
             self.strategy.count = self.lp_service.get_resume_count(self.strategy.get_lp_payload_inner())
         # return self.strategy.count
 
-    def _select_strategy(self, l, r):
+    def _select_strategy(self, l, r, t):
         if l <= self.strategy.count <= r:
             return
-        tmp = min(self.trace, key=lambda x: abs(x['count'] - r))
+        tmp = min(self.trace, key=lambda x: abs(x['count'] - t))
         self.strategy.load(tmp)
 
     def _preset_strategy_company(self):
@@ -168,13 +168,13 @@ class Generator:
         else:
             raise self.EmptyCompanyStrategyException('no company strategy')
 
-        l, r = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
-        self._set_default_strategy(r)
+        l, r, t = RangeTargetResumes.A.value if self.job_analysis.company.tier.tp is Tier.Type.Must else RangeTargetResumes.B.value
+        self._set_default_strategy(t)
 
-        return l, r
+        return l, r, t
 
     def _dfs_strategy_company(self):
-        l, r = self._preset_strategy_company()
+        l, r, t = self._preset_strategy_company()
 
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
@@ -187,13 +187,13 @@ class Generator:
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
-        self._select_strategy(l, r)
+        self._select_strategy(l, r, t)
 
     def _preset_strategy_cores(self):
         self.logger.info('start cores strategy generation')
 
-        l, r = RangeTargetResumes.A.value
-        self._set_default_strategy(r)
+        l, r, t = RangeTargetResumes.A.value
+        self._set_default_strategy(t)
 
         if self.position_type is self.PositionType.SingleCore:
             self.logger.info('single core')
@@ -214,10 +214,10 @@ class Generator:
 
             self._keywords_pre_check_set(l, r)
 
-        return l, r
+        return l, r, t
 
     def _dfs_strategy_cores(self):
-        l, r = self._preset_strategy_cores()
+        l, r, t = self._preset_strategy_cores()
 
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
@@ -233,13 +233,13 @@ class Generator:
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
-        self._select_strategy(l, r)
+        self._select_strategy(l, r, t)
 
     def _preset_strategy_rares_b(self):
         self.logger.info('start rares strategy B generation')
 
-        l, r = RangeTargetResumes.B.value
-        self._set_default_strategy(r)
+        l, r, t = RangeTargetResumes.B.value
+        self._set_default_strategy(t)
 
         # temp change
         keywords_group_backup = self.keywords_groups
@@ -265,13 +265,13 @@ class Generator:
         # restore temp change
         self.keywords_groups = keywords_group_backup
 
-        return l, r
+        return l, r, t
 
     def _preset_strategy_rares_c(self):
         self.logger.info('start rares strategy C generation')
 
-        l, r = RangeTargetResumes.C.value
-        self._set_default_strategy(r)
+        l, r, t = RangeTargetResumes.C.value
+        self._set_default_strategy(t)
 
         keywords = []
         for group in self.keywords_groups:
@@ -283,10 +283,10 @@ class Generator:
         self.strategy.set_keywords_options(keywords)
         self.strategy.is_any_keywords = True
 
-        return l, r
+        return l, r, t
 
     def _dfs_strategy_rares_c(self):
-        l, r = self._preset_strategy_rares_c()
+        l, r, t = self._preset_strategy_rares_c()
 
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
@@ -298,10 +298,10 @@ class Generator:
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
-        self._select_strategy(l, r)
+        self._select_strategy(l, r, t)
 
     def _dfs_strategy_rares_b(self):
-        l, r = self._preset_strategy_rares_b()
+        l, r, t = self._preset_strategy_rares_b()
 
         self._set_strategy_count()
         is_zoom_in = self.strategy.count > r
@@ -317,7 +317,7 @@ class Generator:
 
         self._dfs_strategy(keys, is_zoom_in, l, r)
 
-        self._select_strategy(l, r)
+        self._select_strategy(l, r, t)
 
     def _keywords_pre_check_set(self, l, r):
         self.strategy.is_any_keywords = False
@@ -468,7 +468,7 @@ class Generator:
         if self.strategy.count:
             resp = bot_io.send(str(self.strategy), ENUM_MODEL_ID.STRATEGY_NAME_GEN)
             data = bot_io.parse(resp)
-            name = f'{self.strategy.count}/{self.strategy.r_limit}_{mid_name}_{data}'
+            name = f'{self.strategy.count}/{self.strategy.target}_{mid_name}_{data}'
             payload = json.dumps(self.strategy.get_lp_local_storage(), ensure_ascii=False)
             resp = ah_io.upload_search_strategy(self.pid, name, payload, 'liepin')
             if resp.ok:
@@ -581,38 +581,38 @@ class Generator:
             self.logger.warn(e)
 
     @staticmethod
-    def _react_brain_communication(l, r, history):
-        msg = {'l': l, 'r': r, 'history': history}
+    def _react_brain_communication(l, r, t, history):
+        msg = {'l': l, 'r': r, 'target': t, 'history': history}
         resp = bot_io.send(json.dumps(msg, ensure_ascii=False), ENUM_MODEL_ID.ZOOM_BRAIN)
         data = bot_io.parse(resp)
         data = json.loads(data)
         return data['action'], data['data']
 
     def _brain_controlled_cores_strategy(self):
-        l, r = self._preset_strategy_cores()
+        l, r, t = self._preset_strategy_cores()
 
-        self._brain_controlled_zoom(l, r)
-        self._select_strategy(l, r)
+        self._brain_controlled_zoom(l, r, t)
+        self._select_strategy(l, r, t)
 
     def _brain_controlled_comp_strategy(self):
-        l, r = self._preset_strategy_company()
+        l, r, t = self._preset_strategy_company()
 
-        self._brain_controlled_zoom(l, r)
-        self._select_strategy(l, r)
+        self._brain_controlled_zoom(l, r, t)
+        self._select_strategy(l, r, t)
 
     def _brain_controlled_rares_b_strategy(self):
-        l, r = self._preset_strategy_rares_b()
+        l, r, t = self._preset_strategy_rares_b()
 
-        self._brain_controlled_zoom(l, r)
-        self._select_strategy(l, r)
+        self._brain_controlled_zoom(l, r, t)
+        self._select_strategy(l, r, t)
 
     def _brain_controlled_rares_c_strategy(self):
-        l, r = self._preset_strategy_rares_c()
+        l, r, t = self._preset_strategy_rares_c()
 
-        self._brain_controlled_zoom(l, r)
-        self._select_strategy(l, r)
+        self._brain_controlled_zoom(l, r, t)
+        self._select_strategy(l, r, t)
 
-    def _brain_controlled_zoom(self, l, r):
+    def _brain_controlled_zoom(self, l, r, t):
         self._set_strategy_count()
 
         msg = {
@@ -628,7 +628,7 @@ class Generator:
         self.trace.append(self.strategy.export())
 
         while len(self.trace) < DFS_STEP_MAX:
-            action, data = self._react_brain_communication(l, r, history)
+            action, data = self._react_brain_communication(l, r, t, history)
             if action == 'stop':
                 break
             elif action == 'back':

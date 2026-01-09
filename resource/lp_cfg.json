@@ -2,9 +2,9 @@
   "max_step": 150,
   "salary_max_zoom_factor": 1.5,
   "range": {
-    "A": [150, 250],
-    "B": [50, 150],
-    "C": [50, 3000]
+    "A": [150, 250, 200],
+    "B": [50, 150, 100],
+    "C": [50, 3000, 50]
   },
   "is_react_brain_active": true,
   "random_sleep_range": [5, 10]
