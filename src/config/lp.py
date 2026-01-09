@@ -20,6 +20,7 @@ DFS_STEP_MAX = cfg.get('max_step', math.inf)
 SALARY_MAX_ZOOM_FACTOR = cfg.get('salary_max_zoom_factor', 1.5)
 IS_REACT_BRAIN_ACTIVE = cfg.get('is_react_brain_active', False)
 LP_RANDOM_SLEEP_RANGE = cfg.get('random_sleep_range', GLOBAL_REQ_TIME_GAP_RANGE)
+LP_IS_COMP_STRATEGY_ACTIVE = cfg.get('is_comp_strategy_active', True)
 
 
 class RangeTargetResumes(Enum):

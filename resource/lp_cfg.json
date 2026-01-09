@@ -7,5 +7,6 @@
     "C": [50, 3000, 50]
   },
   "is_react_brain_active": true,
-  "random_sleep_range": [5, 10]
+  "random_sleep_range": [5, 10],
+  "is_comp_strategy_active": true
 }

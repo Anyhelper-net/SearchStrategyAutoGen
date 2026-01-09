@@ -11,7 +11,7 @@ import os
 
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 
-from src.config.lp import RangeTargetResumes, DFS_STEP_MAX, IS_REACT_BRAIN_ACTIVE
+from src.config.lp import RangeTargetResumes, DFS_STEP_MAX, IS_REACT_BRAIN_ACTIVE, LP_IS_COMP_STRATEGY_ACTIVE
 from src.service.lp import LpService
 import src.io.bot as bot_io
 import src.io.anyhelper as ah_io
@@ -511,15 +511,16 @@ class Generator:
             self.logger.warn(e)
 
         # company strategy
-        try:
-            if IS_REACT_BRAIN_ACTIVE:
-                self._brain_controlled_comp_strategy()
-            else:
-                self._dfs_strategy_company()
-            self._upload_strategy('comp')
-            total_count += self.strategy.count
-        except self.GeneratorException as e:
-            self.logger.warn(e)
+        if LP_IS_COMP_STRATEGY_ACTIVE:
+            try:
+                if IS_REACT_BRAIN_ACTIVE:
+                    self._brain_controlled_comp_strategy()
+                else:
+                    self._dfs_strategy_company()
+                self._upload_strategy('comp')
+                total_count += self.strategy.count
+            except self.GeneratorException as e:
+                self.logger.warn(e)
 
         # rares strategy B
         try:
@@ -571,14 +572,15 @@ class Generator:
             self.logger.warn(e)
 
         # company strategy
-        try:
-            if IS_REACT_BRAIN_ACTIVE:
-                self._brain_controlled_comp_strategy()
-            else:
-                self._dfs_strategy_company()
-            self._upload_strategy('comp')
-        except self.GeneratorException as e:
-            self.logger.warn(e)
+        if LP_IS_COMP_STRATEGY_ACTIVE:
+            try:
+                if IS_REACT_BRAIN_ACTIVE:
+                    self._brain_controlled_comp_strategy()
+                else:
+                    self._dfs_strategy_company()
+                self._upload_strategy('comp')
+            except self.GeneratorException as e:
+                self.logger.warn(e)
 
     @staticmethod
     def _react_brain_communication(l, r, t, history):
