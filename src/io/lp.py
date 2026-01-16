@@ -69,7 +69,7 @@ class LpUserProxy:
             'logForm': {"ckId": str(uuid.uuid4()), "skId": '', "fkId": '', "searchScene": "refresh"},
             'version': 'V5',
         }
-        payload = [f'{key}={json.dumps(val, ensure_ascii=False, separators=(',', ':'))}' for key, val in
+        payload = [f"{key}={json.dumps(val, ensure_ascii=False, separators=(',', ':'))}" for key, val in
                    payload.items()]
         payload = '&'.join(payload)
 

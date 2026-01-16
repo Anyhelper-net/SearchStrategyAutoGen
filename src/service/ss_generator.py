@@ -5,6 +5,8 @@
 @author  : duke
 """
 import json
+from itertools import combinations
+
 import math
 from enum import Enum
 import os
@@ -36,6 +38,8 @@ class Generator:
         pass
 
     class EmptyCompanyStrategyException(GeneratorException):
+        pass
+    class EmptyMustStrategyException(GeneratorException):
         pass
 
     def __init__(self, cookies, pid):
@@ -211,9 +215,7 @@ class Generator:
         # elif self.position_type is self.PositionType.MutiCore:
         else:
             self.logger.info('multiple cores')
-
             self._keywords_pre_check_set(l, r)
-
         return l, r, t
 
     def _dfs_strategy_cores(self):
@@ -243,12 +245,12 @@ class Generator:
 
         # temp change
         keywords_group_backup = self.keywords_groups
-        self.keywords_groups = [g for g in self.keywords_groups if g.is_rare]
+        if self.position_type is not self.PositionType.SingleCore:
+            self.keywords_groups = [g for g in self.keywords_groups if g.is_rare]
 
         if self.position_type is self.PositionType.SingleCore:
             self.logger.info('single core')
-
-            self._keywords_pre_check_set(l, r)
+            self._b_rare_strategy_keywords_pre_check_set(l, r)
         else:
             self.logger.info('multiple cores')
 
@@ -319,13 +321,53 @@ class Generator:
 
         self._select_strategy(l, r, t)
 
+    def _b_rare_strategy_keywords_pre_check_set(self,l,r):
+        self.strategy.is_any_keywords = False
+        keywords_map :dict[str,int] = {}
+        must_groups = [g for g in self.keywords_groups if g.tier.tp is Tier.Type.Must]
+        strong_groups = [g for g in self.keywords_groups if g.tier.tp is Tier.Type.Strong]
+        nice_groups = [g for g in self.keywords_groups if g.tier.tp is Tier.Type.Nice]
+        if not strong_groups and not nice_groups:
+            self.logger.info('no strong_groups and nice_groups in b rare')
+            return
+        target_groups = strong_groups[:2] + nice_groups[:2]
+        for current in must_groups[0].keywords_mapping:
+            for layer_idx,group in enumerate(target_groups,start=1):
+                self.logger.info(f'b rare strategy single try layer {layer_idx} group={group.tier.tp}')
+                best_over_limit = None
+                accepted = False
+                for kw in group.keywords_mapping:
+                    trial = f'{current} {kw}'
+                    self.strategy.set_keywords_options(SearchStrategy.Option((trial,), 0))
+                    self._set_strategy_count()
+                    self.logger.info(f'b rare strategy single try <{trial}> count={self.strategy.count}')
+                    if l <= self.strategy.count <= r:
+                        self.logger.info(f'b rare strategy single accept <{trial}>')
+                        keywords_map[trial] = self.strategy.count
+                        current = trial
+                        accepted = True
+                        break
+                    if (best_over_limit is None and r <= self.strategy.count ) or (r <= self.strategy.count < best_over_limit):
+                        best_over_limit = (self.strategy.count, trial)
+                if not accepted:
+                    if best_over_limit is None:
+                        self.logger.warn(f'b rare strategy single no usable keyword in group {group.tier.tp}, skip')
+                        continue
+                    kw = best_over_limit[1]
+                    keywords_map[kw] = self.strategy.count
+                    self.logger.info(f"b rare strategy single all keywords over r,use minimal one <{kw}> count={best_over_limit[0]}")
+        if keywords_map:
+            keywords = list(dict(sorted(keywords_map.items(),key= lambda x:x[1],reverse=True)).keys())
+            self.logger.info(f'keywords option {keywords} being set')
+            self.strategy.set_keywords_options(SearchStrategy.Option(keywords, 0))
+        else:
+            self.logger.warn(f'b rare strategy single keywords get empty keywords,skip')
+
     def _keywords_pre_check_set(self, l, r):
         self.strategy.is_any_keywords = False
-
         # values = LazyTieredKeywordSequence(self.keywords_groups, k_min=2)
         # self.strategy.set_keywords_options(
         #     SearchStrategy.Option(values, values.encode_idx(self.default_group_num, (0,) * self.default_group_num)))
-
         keywords = []
         # for layer_max in range(2, len(self.keywords_groups)):
         #     combs = LazyProductSequence(self.keywords_groups[:layer_max])
@@ -499,28 +541,28 @@ class Generator:
     def run(self):
         total_count = 0
 
-        # cores strategy
-        try:
-            if IS_REACT_BRAIN_ACTIVE:
-                self._brain_controlled_cores_strategy()
-            else:
-                self._dfs_strategy_cores()
-            self._upload_strategy('cores')
-            total_count += self.strategy.count
-        except self.GeneratorException as e:
-            self.logger.warn(e)
-
-        # company strategy
-        if LP_IS_COMP_STRATEGY_ACTIVE:
-            try:
-                if IS_REACT_BRAIN_ACTIVE:
-                    self._brain_controlled_comp_strategy()
-                else:
-                    self._dfs_strategy_company()
-                self._upload_strategy('comp')
-                total_count += self.strategy.count
-            except self.GeneratorException as e:
-                self.logger.warn(e)
+        # # cores strategy
+        # try:
+        #     if IS_REACT_BRAIN_ACTIVE:
+        #         self._brain_controlled_cores_strategy()
+        #     else:
+        #         self._dfs_strategy_cores()
+        #     self._upload_strategy('cores')
+        #     total_count += self.strategy.count
+        # except self.GeneratorException as e:
+        #     self.logger.warn(e)
+        #
+        # # company strategy
+        # if LP_IS_COMP_STRATEGY_ACTIVE and self.job_analysis.company.tier:
+        #     try:
+        #         if IS_REACT_BRAIN_ACTIVE:
+        #             self._brain_controlled_comp_strategy()
+        #         else:
+        #             self._dfs_strategy_company()
+        #         self._upload_strategy('comp')
+        #         total_count += self.strategy.count
+        #     except self.GeneratorException as e:
+        #         self.logger.warn(e)
 
         # rares strategy B
         try:
@@ -572,7 +614,7 @@ class Generator:
             self.logger.warn(e)
 
         # company strategy
-        if LP_IS_COMP_STRATEGY_ACTIVE:
+        if LP_IS_COMP_STRATEGY_ACTIVE and self.job_analysis.company.tier:
             try:
                 if IS_REACT_BRAIN_ACTIVE:
                     self._brain_controlled_comp_strategy()

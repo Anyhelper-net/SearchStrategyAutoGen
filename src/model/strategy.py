@@ -183,7 +183,7 @@ class SearchStrategy:
             r['industryArr'] = [{'code': Mapping.INDUSTRY_CODE_DICT[self.n_options['industry'].value()],
                                  'name': self.n_options['industry'].value()}]
         except KeyError:
-            strategy_logger.warn(f'no industry <{self.n_options['industry'].value()}>')
+            strategy_logger.warn(f"no industry <{self.n_options['industry'].value()}>")
             r['industryArr'] = ''
 
         return r
@@ -226,7 +226,7 @@ class SearchStrategy:
         try:
             r['industrys'] = Mapping.INDUSTRY_CODE_DICT[self.n_options['industry'].value()]
         except KeyError:
-            strategy_logger.warn(f'no industry <{self.n_options['industry'].value()}>')
+            strategy_logger.warn(f"no industry <{self.n_options['industry'].value()}>")
             r['industrys'] = ''
 
         return r
