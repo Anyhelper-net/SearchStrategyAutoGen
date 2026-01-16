@@ -356,7 +356,7 @@ class Generator:
                     if best_over_limit is None or best_less_limit is None:
                         self.logger.warn(f'b rare strategy single no usable keyword in group {group.tier.tp}, skip')
                         continue
-                    if l - best_less_limit < best_over_limit - r:
+                    if l - best_less_limit[0] < best_over_limit[0] - r:
                         kw = best_over_limit[1]
                         keywords_map[kw] = self.strategy.count
                         self.logger.info(f"b rare strategy single all keywords over r,use minimal one <{kw}> count={best_over_limit[0]}")
