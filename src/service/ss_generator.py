@@ -348,9 +348,9 @@ class Generator:
                         current = trial
                         accepted = True
                         break
-                    if (best_over_limit[0] is None and r < self.strategy.count ) or (r < self.strategy.count < best_over_limit[0]):
+                    if (best_over_limit is None and r < self.strategy.count ) or (r < self.strategy.count < best_over_limit[0]):
                         best_over_limit = (self.strategy.count, trial)
-                    if (best_less_limit[0] is None and self.strategy.count < l) or (best_less_limit[0] < self.strategy.count < l):
+                    if (best_less_limit is None and self.strategy.count < l) or (best_less_limit[0] < self.strategy.count < l):
                         best_less_limit = (self.strategy.count, trial)
                 if not accepted:
                     if best_over_limit is None or best_less_limit is None:
