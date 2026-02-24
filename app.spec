@@ -92,17 +92,50 @@ exe3 = EXE(
     console=True,
 )
 
+#-----------queue_app_cil.py----------
+a4 = Analysis(
+    ['queue_app_cil.py'],
+    pathex=[],
+    binaries=[],
+    datas=[],
+    hiddenimports=[],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+
+pyz4 = PYZ(a4.pure)
+
+exe4 = EXE(
+    pyz4,
+    a4.scripts,
+    [],
+    exclude_binaries=True,
+    name='queue_app_cil',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=True,
+)
+
 # ---------- 同一目录收集 ----------
 coll = COLLECT(
     exe1,
     exe2,
     exe3,
+    exe4,
     a1.binaries,
     a1.datas,
     a2.binaries,
     a2.datas,
     a3.binaries,
     a3.datas,
+    a4.binaries,
+    a4.datas,
     strip=False,
     upx=True,
     upx_exclude=[],

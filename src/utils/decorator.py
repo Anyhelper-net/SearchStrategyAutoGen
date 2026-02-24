@@ -7,7 +7,6 @@
 from src.exceptions import HTTPRetryException, AccessForbiddenException
 import time
 
-
 def http_retry(times, gap):
     def decorator(func):
         def wrapper(*args, **kwargs):

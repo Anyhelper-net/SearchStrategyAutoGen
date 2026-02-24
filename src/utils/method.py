@@ -6,7 +6,6 @@
 """
 import random
 import time
-
 from src.config.http import GLOBAL_REQ_TIME_GAP_RANGE
 
 

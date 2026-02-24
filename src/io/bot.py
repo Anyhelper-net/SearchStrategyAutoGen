@@ -9,7 +9,6 @@ from src.config.bot import *
 from src.utils.decorator import http_retry
 from src.config.http import *
 
-
 @http_retry(HTTP_RETRY_TIMES, HTTP_RETRY_GAP)
 def send(msg, chatbot_id):
     if isinstance(chatbot_id, ENUM_MODEL_ID):

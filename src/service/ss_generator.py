@@ -34,6 +34,7 @@ class Generator:
 
     class EmptyCompanyStrategyException(GeneratorException):
         pass
+
     class EmptyMustStrategyException(GeneratorException):
         pass
 
@@ -316,9 +317,9 @@ class Generator:
 
         self._select_strategy(l, r, t)
 
-    def _b_rare_strategy_keywords_pre_check_set(self,l,r):
+    def _b_rare_strategy_keywords_pre_check_set(self, l, r):
         self.strategy.is_any_keywords = False
-        keywords_map :dict[str,int] = {}
+        keywords_map: dict[str, int] = {}
         must_groups = [g for g in self.keywords_groups if g.tier.tp is Tier.Type.Must]
         strong_groups = [g for g in self.keywords_groups if g.tier.tp is Tier.Type.Strong]
         nice_groups = [g for g in self.keywords_groups if g.tier.tp is Tier.Type.Nice]
@@ -327,7 +328,7 @@ class Generator:
             return
         target_groups = strong_groups[:2] + nice_groups[:2]
         for current in must_groups[0].keywords_mapping:
-            for layer_idx,group in enumerate(target_groups,start=1):
+            for layer_idx, group in enumerate(target_groups, start=1):
                 self.logger.info(f'b rare strategy single try layer {layer_idx} group={group.tier.tp}')
                 best_over_limit = None
                 best_less_limit = None
@@ -343,9 +344,11 @@ class Generator:
                         current = trial
                         accepted = True
                         break
-                    if (best_over_limit is None and r < self.strategy.count ) or (r < self.strategy.count < best_over_limit[0]):
+                    if (best_over_limit is None and r < self.strategy.count) or (
+                            r < self.strategy.count < best_over_limit[0]):
                         best_over_limit = (self.strategy.count, trial)
-                    if (best_less_limit is None and self.strategy.count < l) or (best_less_limit[0] < self.strategy.count < l):
+                    if (best_less_limit is None and self.strategy.count < l) or (
+                            best_less_limit[0] < self.strategy.count < l):
                         best_less_limit = (self.strategy.count, trial)
                 if not accepted:
                     if best_over_limit is None or best_less_limit is None:
@@ -354,13 +357,15 @@ class Generator:
                     if l - best_less_limit[0] < best_over_limit[0] - r:
                         kw = best_over_limit[1]
                         keywords_map[kw] = self.strategy.count
-                        self.logger.info(f"b rare strategy single all keywords over r,use minimal one <{kw}> count={best_over_limit[0]}")
+                        self.logger.info(
+                            f"b rare strategy single all keywords over r,use minimal one <{kw}> count={best_over_limit[0]}")
                     else:
                         kw = best_less_limit[1]
                         keywords_map[kw] = self.strategy.count
-                        self.logger.info(f"b rare strategy single all keywords less r,use maximal one <{kw}> count={best_less_limit[0]}")
+                        self.logger.info(
+                            f"b rare strategy single all keywords less r,use maximal one <{kw}> count={best_less_limit[0]}")
         if keywords_map:
-            keywords = list(dict(sorted(keywords_map.items(),key= lambda x:x[1],reverse=True)).keys())
+            keywords = list(dict(sorted(keywords_map.items(), key=lambda x: x[1], reverse=True)).keys())
             self.logger.info(f'keywords option {keywords} being set')
             self.strategy.set_keywords_options(SearchStrategy.Option(keywords, 0))
         else:
