@@ -40,3 +40,39 @@ class LpService:
                     raise LpService.LpHumanRobotVerification(resp)
                 else:
                     raise LpService.LpServiceException(resp)
+    def get_resumes(self,inner_payload,retry=1):
+        for _ in range(retry + 1):
+            random_sleep(LP_RANDOM_SLEEP_RANGE)
+            resp = self.proxy.search_resumes(inner_payload)
+            data = resp.json()
+            try:
+                return data
+            except Exception:
+                if resp.text == '{"flag":0}':
+                    raise LpService.LpHumanRobotVerification(resp)
+                else:
+                    raise LpService.LpServiceException(resp)
+    def get_resume_detail(self, encodeResId,retry=1):
+        for _ in range(retry + 1):
+            random_sleep(LP_RANDOM_SLEEP_RANGE)
+            resp = self.proxy.get_resume_detail(encodeResId)
+            data = resp.json()
+            try:
+                return data
+            except Exception:
+                if resp.text == '{"flag":0}':
+                    raise LpService.LpHumanRobotVerification(resp)
+                else:
+                    raise LpService.LpServiceException(resp)
+    def get_work_exp(self,code,encodeResId,retry = 1):
+        for _ in range(retry + 1):
+            random_sleep(LP_RANDOM_SLEEP_RANGE)
+            resp = self.proxy.get_work_exp(code,encodeResId)
+            data = resp.json()
+            try:
+                return data
+            except Exception:
+                if resp.text == '{"flag":0}':
+                    raise LpService.LpHumanRobotVerification(resp)
+                else:
+                    raise LpService.LpServiceException(resp)

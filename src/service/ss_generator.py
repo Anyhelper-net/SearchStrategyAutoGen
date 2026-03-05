@@ -16,6 +16,8 @@ from src.config.bot import ENUM_MODEL_ID
 from typing import List
 from src.model import *
 import copy
+
+from src.service.srceening_uploader import ScreeningUploader
 from src.utils.logger import logger
 from src.config.path import LOG_DIR
 import logging
@@ -67,6 +69,8 @@ class Generator:
         self._parse_hard_reqs(data1)
 
         self.total_api_acc_num = 0
+
+        self.hid = ah_io.get_ah_result_dict(ah_io.get_incharge_id_by_position_id(pid))['result'][0]['position_id']
 
         # self._set_default_strategy()
 
@@ -524,6 +528,10 @@ class Generator:
             if resp.ok:
                 self.logger.info(
                     f'strategy {name} uploaded:\n {self.strategy}\n')
+                # 上传高潜
+                if self.hid:
+                    su = ScreeningUploader(self.lp_service,self.strategy)
+                    su.liepin_upload(self.pid,self.hid)
             else:
                 self.logger.warn(resp.text)
         else:

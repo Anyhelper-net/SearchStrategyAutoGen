@@ -21,7 +21,17 @@ API_GET_USER_ROLE = 'https://talent.anyhelper.net/api/get_user_role.php'
 API_UPDATE_RESUME = 'https://talent.anyhelper.net/api/update_resume_summary.php'
 API_GET_POSITION_INFO_2 = 'https://talent.anyhelper.net/api/get_jd_prompt.php'
 API_ADD_SEARCH_STRATEGY = 'https://talent.anyhelper.net/api/add_search_strategy.php'
+API_GET_JOB_DATA = 'https://talent.anyhelper.net/api/get_ai_jd.php'
+API_UPDATE_STATUS_TAG = 'https://talent.anyhelper.net/api/update_resume_summary.php'
+API_GET_INCHARGE_ID_BY_POSITION_ID = 'https://talent.anyhelper.net/api/get_jd_by_id.php'
 
+
+class ENUM_CANDIDATE_CLASSIFY(Enum):
+    LIE_PIN = 'liepin'
+    LIE_PIN_GOLD= 'liepin_gold'
+    MAI_MAI = 'maimai'
+    ZHI_LIAN = 'zhilian'
+    LINKEDIN = 'linkedin'
 
 class ENUM_H5_AI_STATUS(Enum):
     UNREADY = 'AI未运行'

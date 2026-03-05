@@ -9,6 +9,7 @@ import requests
 from src.config.anyhelper import *
 from src.utils.decorator import http_retry
 from src.config.http import *
+import json
 
 
 @http_retry(HTTP_RETRY_TIMES, HTTP_RETRY_GAP)
@@ -216,5 +217,39 @@ def upload_search_strategy(position_id, name, data, source):
 
     return requests.post(url, payload, timeout=HTTP_TIME_OUT_AH)
 
+@http_retry(HTTP_RETRY_TIMES,HTTP_RETRY_GAP)
+def get_job_data(position_id):
+    url = API_GET_JOB_DATA
+
+    payload = {
+        'position_id' : position_id
+    }
+
+    return requests.post(url, payload)
+
+def get_ah_result_dict(response):
+    return json.loads(response.content.decode('utf-8'))
+
+@http_retry(HTTP_RETRY_TIMES,HTTP_RETRY_GAP)
+def update_status_tag(resume_id,status_tags):
+    url = API_UPDATE_STATUS_TAG
+    payload = {
+        'resume_id':resume_id,
+        'status_tags': status_tags
+    }
+
+    return requests.post(url,payload)
+
+@http_retry(HTTP_RETRY_TIMES,HTTP_RETRY_GAP)
+def get_incharge_id_by_position_id(position_id):
+    url = API_GET_INCHARGE_ID_BY_POSITION_ID
+    payload = {
+        'position_id': position_id
+    }
+
+    return  requests.post(url,payload)
+
 if __name__ == '__main__':
     pass
+
+
