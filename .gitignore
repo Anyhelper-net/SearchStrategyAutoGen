@@ -13,3 +13,5 @@ resource/chromedriver.exe
 test/
 save/
 cookies/
+.DS_Store
+.vscode/
