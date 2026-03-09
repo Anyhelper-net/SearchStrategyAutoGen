@@ -71,7 +71,7 @@ class Generator:
 
         self.total_api_acc_num = 0
 
-        self.hid = ah_io.get_ah_result_dict(ah_io.get_incharge_id_by_position_id(pid))['result'][0]['position_id']
+        self.hid = ah_io.get_ah_result_dict(ah_io.get_incharge_id_by_position_id(pid))['results'][0]['position_id']
 
         self.mm_service = MMService(mm_cookies)
 
