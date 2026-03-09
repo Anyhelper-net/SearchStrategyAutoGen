@@ -14,15 +14,19 @@ from src.service.ss_generator import Generator
 import json
 
 if __name__ == '__main__':
-    print('cookies file path:')
+    print('lp_cookies file path:')
     with open(input().strip('"'), 'r') as f:
-        cookies = json.load(f)
+        lp_cookies = json.load(f)
+
+    print('mm_cookies file path:')
+    with open(input().strip('"'), 'r') as f:
+        mm_cookies = json.load(f)
 
     while True:
         try:
             print('position id:')
             pid = int(input())
-            generator = Generator(cookies, pid)
+            generator = Generator(pid,lp_cookies,mm_cookies)
             generator.run()
         except:
             traceback.print_exc()

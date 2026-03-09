@@ -20,3 +20,15 @@ class HTTPRetryException(HTTPException):
 class AccessForbiddenException(HTTPException):
     def __init__(self, resp):
         super().__init__(resp)
+
+
+
+class InvalidRespJsonException(RuntimeError):
+    def __init__(self, data, *args):
+        super().__init__(*args)
+        self.data = data
+
+
+class CookiesExpiredException(AccessForbiddenException):
+    def __init__(self, resp, *args):
+        super().__init__(resp, *args)

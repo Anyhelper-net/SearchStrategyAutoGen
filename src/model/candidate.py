@@ -82,14 +82,14 @@ class Candidate:
         self.job_requirement = ''
         self.job_deep_requirement = ''
 
-        self.firstCheckComment = ""
+        self.firstCheckComment:str = ""
         self.firstCheckCommentLabel = ""
 
         self.gold_collar = gold_collar
         self.time_stamp = datetime.now()
         self.note = ''
 
-        self.fact_check_comment = ''
+        self.fact_check_comment:str = ''
         self.fact_check_comment_label = ''
 
         self.now_region = now_region
@@ -253,7 +253,7 @@ class Candidate:
         pass
 
     @classmethod
-    def from_raw_resume(cls, base_info_dict, work_exp_dict, position_id, incharge_id=None):
+    def from_lp_raw_resume(cls, base_info_dict, work_exp_dict, position_id, incharge_id=None):
         """
         base_info_dict : 第一个 JSON 的 data 字段
         work_exp_dict  : 第二个 JSON 的 data 字段（数组）
@@ -318,20 +318,44 @@ class Candidate:
             now_region=now_region
         )
 
-    def to_excel_row(self, filepath: Union[str, Path]):
-        filepath = Path(filepath)
+    @classmethod
+    def from_mm_raw_resume(cls,raw_resume_dict:dict,position_id,incharge_id=None):
+        name = raw_resume_dict.get('name',"")
+        current_company = raw_resume_dict.get('current_company',{}).get('company',"")
+        current_positon = raw_resume_dict.get('current_company',{}).get('position',"")
+        school_name = raw_resume_dict.get('school',"")
+        major = raw_resume_dict.get('major',"")
+        salary = raw_resume_dict.get("job_preferences",{}).get("salary",'')
+        recent_active_state = raw_resume_dict.get('active_state','')
+        recent_active_time = None
+        if recent_active_state:
+            dt_now = datetime.now()
+            if '在线' or '刚刚活跃' or '今日活跃' in recent_active_state:
+                recent_active_time = dt_now
+            if '近1周活跃' in recent_active_state:
+                recent_active_time = dt_now.replace(day=dt_now.day - 7)
+            if '近1月活跃' in recent_active_state:
+                recent_active_time = dt_now.replace(month=dt_now.month - 1)
+            if '近1年活跃' in recent_active_state:
+                recent_active_time = dt_now.replace(year=dt_now.year - 1)
 
-        if filepath.exists():
-            # ✅ 文件存在：加载并追加数据行
-            generator = excel_generator(filepath)
-            generator.add_data_object_row(self, EXECL_ATTRIBUTES)
-            generator.save()
-        else:
-            # ✅ 文件不存在：新建文件并写入表头
-            generator = excel_generator(filepath)
-            generator.set_headers(EXECL_HEADER)  # 仅第一次写表头
-            generator.add_data_object_row(self, EXECL_ATTRIBUTES)
-            generator.save()
+        now_region = raw_resume_dict.get("province","")+raw_resume_dict.get("city","")
+
+        return cls(
+            name=name,
+            currentCompany=current_company,
+            currentPosition=current_positon,
+            schoolName=school_name,
+            major=major,
+            rawResume=json.dumps(raw_resume_dict,ensure_ascii=False),
+            salary=salary,
+            position_id=position_id,
+            incharge_id=incharge_id,
+            recentActiveTime=recent_active_time,
+            now_region=now_region
+        )
+
+
 
 
 

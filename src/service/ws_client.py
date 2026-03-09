@@ -62,7 +62,7 @@ class Client:
                 mm_cookies = json.loads(mm_cookies)
 
                 try:
-                    generator = Generator(lp_cookies, pid)
+                    generator = Generator(pid,lp_cookies,mm_cookies)
                     generator.run()
                     self.report_task('TASK_RESULT', data['payload']['task_id'], True, '')
                     self.logger.info('task completed\n')
@@ -74,6 +74,7 @@ class Client:
                         traceback.print_exc()
 
                 # add helpers here
+
 
         else:
             self.logger.info(msg)

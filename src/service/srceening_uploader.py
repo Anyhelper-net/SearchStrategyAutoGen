@@ -1,14 +1,18 @@
-
+from src.config.maimai import FIRST_CONTACT_CANDIDATE_RESUME_KEYS
 from src.model import SearchStrategy
 from src.model.candidate import Candidate
 from src.service.lp import LpService
 import json
+from src.model.mm_strategy import MMStrategy
+from src.service.mm import MMService
+from src.utils import random_sleep
 
 
 class ScreeningUploader:
-    def __init__(self,lp_service,strategy):
+    def __init__(self,strategy,lp_service=None,mm_service=None):
         self.lp_service:LpService = lp_service
         self.strategy:SearchStrategy = strategy
+        self.mm_service:MMService = mm_service
 
     def liepin_upload(self,pid,hid):
         resumes = []
@@ -29,12 +33,38 @@ class ScreeningUploader:
 
             resume_work_exp = json.loads(response.text).get('data', {})
 
-            candidate = Candidate.from_raw_resume(resume_detail, resume_work_exp, pid, hid)
+            candidate = Candidate.from_lp_raw_resume(resume_detail, resume_work_exp, pid, hid)
 
             if resume_detail.get('goldUser', False):
                 candidate.gold_collar = True
 
             candidate.upload_screening_resume_to_anyJob()
+    
+    def maimai_upload(self,pid,hid,limit_search = 1000):
+        lp_strategy = self.strategy.get_lp_payload_inner()
+        page_index = 0
+        _PAGE_SIZE = 30
+        total = self.mm_service.search_candidate(lp_strategy,page_index,_PAGE_SIZE)['total']
+        if not int(total):
+            return
+
+        while page_index * _PAGE_SIZE < limit_search:
+
+            random_sleep()
+            data = self.mm_service.search_candidate(lp_strategy, page_index, _PAGE_SIZE)
+            mm_uids = data['all_uids']
+            if not len(mm_uids):
+                break
+            mm_uids = list(mm_uids)
+            if not len(mm_uids):
+                page_index += 1
+                continue
+
+            for mm_uid in mm_uids:
+                resume = self.mm_service.get_resume(mm_uid)['data']
+                candidate = Candidate.from_mm_raw_resume(resume,pid,hid)
+                candidate.upload_screening_resume_to_anyJob()
+
 
 
 

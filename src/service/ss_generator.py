@@ -17,6 +17,7 @@ from typing import List
 from src.model import *
 import copy
 
+from src.service.mm import MMService
 from src.service.srceening_uploader import ScreeningUploader
 from src.utils.logger import logger
 from src.config.path import LOG_DIR
@@ -40,7 +41,7 @@ class Generator:
     class EmptyMustStrategyException(GeneratorException):
         pass
 
-    def __init__(self, cookies, pid):
+    def __init__(self,pid,lp_cookies,mm_cookies):
         self.logger = logger.getChild(f'strategy_generator_{pid}')
         handler = ConcurrentRotatingFileHandler(
             os.path.join(LOG_DIR, f'pid_{pid}.log'),
@@ -52,7 +53,7 @@ class Generator:
 
         self.logger.info(f'building generator for pid:{pid}...')
 
-        self.lp_service = LpService(cookies)
+        self.lp_service = LpService(lp_cookies)
         self.pid = pid
         data1, data2 = self._get_position_info()
 
@@ -71,6 +72,8 @@ class Generator:
         self.total_api_acc_num = 0
 
         self.hid = ah_io.get_ah_result_dict(ah_io.get_incharge_id_by_position_id(pid))['result'][0]['position_id']
+
+        self.mm_service = MMService(mm_cookies)
 
         # self._set_default_strategy()
 
@@ -529,9 +532,9 @@ class Generator:
                 self.logger.info(
                     f'strategy {name} uploaded:\n {self.strategy}\n')
                 # 上传高潜
-                if self.hid:
-                    su = ScreeningUploader(self.lp_service,self.strategy)
-                    su.liepin_upload(self.pid,self.hid)
+                su = ScreeningUploader(self.strategy,self.lp_service,self.mm_service)
+                su.liepin_upload(self.pid,self.hid)
+                su.maimai_upload(self.pid,self.hid)
             else:
                 self.logger.warn(resp.text)
         else:
