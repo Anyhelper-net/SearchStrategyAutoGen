@@ -8,11 +8,8 @@
 ----------------------------------------------------
 """
 import json
-from pathlib import Path
-from typing import Union
-
 import src.io.bot as bot_io
-from datetime import datetime
+from datetime import datetime,timedelta
 from src.io.anyhelper import get_job_data, duplicate_screening, add_screening_resume, \
     h5_post, get_user_role, get_ah_result_dict
 from src.config.anyhelper import ENUM_CANDIDATE_CLASSIFY
@@ -333,11 +330,11 @@ class Candidate:
             if '在线' or '刚刚活跃' or '今日活跃' in recent_active_state:
                 recent_active_time = dt_now
             if '近1周活跃' in recent_active_state:
-                recent_active_time = dt_now.replace(day=dt_now.day - 7)
+                recent_active_time = dt_now - timedelta(days=7)
             if '近1月活跃' in recent_active_state:
-                recent_active_time = dt_now.replace(month=dt_now.month - 1)
+                recent_active_time = dt_now - timedelta(days=30)
             if '近1年活跃' in recent_active_state:
-                recent_active_time = dt_now.replace(year=dt_now.year - 1)
+                recent_active_time = dt_now - timedelta(days=365)
 
         now_region = raw_resume_dict.get("province","")+raw_resume_dict.get("city","")
 
