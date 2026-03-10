@@ -8,7 +8,7 @@ import traceback
 
 import src.config as cfg
 
-# cfg.IS_PYCHARM = True
+cfg.IS_PYCHARM = True
 
 from src.service.ss_generator import Generator
 import json

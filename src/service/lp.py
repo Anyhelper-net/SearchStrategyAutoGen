@@ -40,10 +40,10 @@ class LpService:
                     raise LpService.LpHumanRobotVerification(resp)
                 else:
                     raise LpService.LpServiceException(resp)
-    def get_resumes(self,inner_payload,retry=1):
+    def get_resumes(self,inner_payload,cur_page = 0,retry=1):
         for _ in range(retry + 1):
             random_sleep(LP_RANDOM_SLEEP_RANGE)
-            resp = self.proxy.search_resumes(inner_payload)
+            resp = self.proxy.search_resumes(inner_payload,curPage=cur_page)
             data = resp.json()
             try:
                 return data

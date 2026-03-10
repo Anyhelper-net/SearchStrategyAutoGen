@@ -16,12 +16,14 @@ class ScreeningUploader:
 
     def liepin_upload(self,pid,hid):
         resumes = []
+        cur_page = 0
         while True:
-            data = self.lp_service.get_resumes(self.strategy.get_lp_payload_inner())
+            data = self.lp_service.get_resumes(self.strategy.get_lp_payload_inner(),cur_page=cur_page)
             tmp_resumes = data.get('data', {}).get('resList')
             if not tmp_resumes:
                 break
             resumes += tmp_resumes
+            cur_page += 1
 
         for resume in resumes:
             response = self.lp_service.get_resume_detail(resume['simpleResumeForm']['resIdEncode'])
