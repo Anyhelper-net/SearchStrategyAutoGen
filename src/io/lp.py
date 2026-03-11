@@ -37,6 +37,13 @@ class LpUserProxy:
         self.client_id = None
         self._get_client_id()
 
+    def _get_payload(self, payload):
+        payload = [f'{key} = {json.dumps(val)}' for key, val in payload.items()]
+        payload = '&'.join(payload)
+        payload = payload.replace('\"', '')
+        payload = payload.replace(' ', '')
+        return payload
+
     def _get_headers(self):
         headers = deepcopy(TEMP_LP_HEADERS)
         headers['X-XSRF-TOKEN'] = self.cookies_name_val_dict['XSRF-TOKEN']
