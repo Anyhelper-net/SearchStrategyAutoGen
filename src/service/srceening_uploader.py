@@ -26,14 +26,14 @@ class ScreeningUploader:
             cur_page += 1
 
         for resume in resumes:
-            response = self.lp_service.get_resume_detail(resume['simpleResumeForm']['resIdEncode'])
+            data = self.lp_service.get_resume_detail(resume['simpleResumeForm']['resIdEncode'])
 
-            resume_detail = json.loads(response.text)['data']
+            resume_detail = data['data']
 
-            response = self.lp_service.get_work_exp(resume_detail.get('basicInfoForm', {}).get('resJobtitle'),
+            data = self.lp_service.get_work_exp(resume_detail.get('basicInfoForm', {}).get('resJobtitle'),
                                            resume['simpleResumeForm']['resIdEncode'])
 
-            resume_work_exp = json.loads(response.text).get('data', {})
+            resume_work_exp = data.get('data', {})
 
             candidate = Candidate.from_lp_raw_resume(resume_detail, resume_work_exp, pid, hid)
 
