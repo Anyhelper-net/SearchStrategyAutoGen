@@ -42,26 +42,19 @@ def h5_ai_update_status(position_id, ai_process_status: ENUM_H5_AI_STATUS, ai_st
 
 
 @http_retry(HTTP_RETRY_TIMES, HTTP_RETRY_GAP)
-def add_screening_resume(position_id, name, current_company, current_position, resume_content, ai_summary, incharge_id,
-                         comment, status, link='', coins_cost=2, tags=''):
+def add_screening_resume(position_id,incharge_id,status = "待联系", coins_cost=2,**kwargs):
     url = API_ADD_SCREENING_RESUME
 
     payload = {
         'position_id': position_id,
-        'name': name,
-        'current_company': current_company,
-        'current_position': current_position,
-        'resume_content': resume_content,
-        'ai_summary': ai_summary,
         'incharge_id': incharge_id,
-        'comment': comment,
         'status': status,
-        'link': link,
         'coins_cost': coins_cost,
-        'tags': tags,
     }
 
-    return requests.post(url, payload, timeout=HTTP_TIME_OUT_AH)
+    payload.update(kwargs)
+
+    return requests.post(url, payload)
 
 
 @http_retry(HTTP_RETRY_TIMES, HTTP_RETRY_GAP)
