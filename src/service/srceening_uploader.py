@@ -44,16 +44,18 @@ class ScreeningUploader:
     
     def maimai_upload(self,pid,hid,limit_search = 1000):
         lp_strategy = self.strategy.get_lp_payload_inner()
+        mm_strategy = MMStrategy()
+        mm_strategy.load_from_lp(lp_strategy)
         page_index = 0
         _PAGE_SIZE = 30
-        total = self.mm_service.search_candidate(lp_strategy,page_index,_PAGE_SIZE)['total']
+        total = self.mm_service.search_candidate(mm_strategy,page_index,_PAGE_SIZE)['total']
         if not int(total):
             return
 
         while page_index * _PAGE_SIZE < limit_search:
 
             random_sleep()
-            data = self.mm_service.search_candidate(lp_strategy, page_index, _PAGE_SIZE)
+            data = self.mm_service.search_candidate(mm_strategy, page_index, _PAGE_SIZE)
             mm_uids = data['all_uids']
             if not len(mm_uids):
                 break

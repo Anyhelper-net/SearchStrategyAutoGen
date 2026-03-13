@@ -37,6 +37,8 @@ class Candidate:
         position_id,
         incharge_id,
         now_region,
+        source,
+        mm_uuid = None,
         gold_collar=None,
         link: str = "",
         recentActiveTime: datetime | None = None,
@@ -72,9 +74,11 @@ class Candidate:
         self.link = link
         self.schoolName = schoolName
         self.major = major
-        self.liepin_keywords = (
-            f"{currentCompany} {currentPosition} {schoolName} {major}"
-        )
+        self.source =source
+        if source == ENUM_CANDIDATE_CLASSIFY.LIE_PIN.value or ENUM_CANDIDATE_CLASSIFY.LIE_PIN_GOLD.value:
+            self.liepin_keywords = f"{currentCompany} {currentPosition} {schoolName} {major}"
+        else:
+            self.liepin_keywords = mm_uuid
 
         self.rawResume = rawResume
 
@@ -246,11 +250,6 @@ class Candidate:
             f"姓名：{'猎聘 ' + self.name} 匹配原因：{comment}",
         )
 
-        if self.gold_collar:
-            source = ENUM_CANDIDATE_CLASSIFY.LIE_PIN_GOLD.value
-        else:
-            source = ENUM_CANDIDATE_CLASSIFY.LIE_PIN.value
-
         params = {
             "name": self.name,
             "liepin_keywords": self.liepin_keywords,
@@ -259,7 +258,7 @@ class Candidate:
             "resume_content": clean_resume,
             "ai_summary": self.simple_resume,
             "comment": comment,
-            "source": source,
+            "source": self.source,
         }
 
         if self.recentActiveTime:
@@ -294,6 +293,7 @@ class Candidate:
         """
 
         name = base_info_dict.get("showName", "") or ""
+        elite = base_info_dict.get('elite',False)
 
         active_time_str = base_info_dict.get("activeTime")  # "2025/12/10"
         recentActiveTime = None
@@ -331,6 +331,11 @@ class Candidate:
 
         raw_resume_str = json.dumps(raw_resume, ensure_ascii=False)
 
+        if elite:
+            source = ENUM_CANDIDATE_CLASSIFY.LIE_PIN_GOLD.value
+        else:
+            source = ENUM_CANDIDATE_CLASSIFY.LIE_PIN.value
+
         return cls(
             name=name,
             currentCompany=currentCompany,
@@ -343,6 +348,7 @@ class Candidate:
             incharge_id=incharge_id,
             recentActiveTime=recentActiveTime,
             now_region=now_region,
+            source=source
         )
 
     @classmethod
@@ -354,6 +360,7 @@ class Candidate:
         major = raw_resume_dict.get("major", "")
         salary = raw_resume_dict.get("job_preferences", {}).get("salary", "")
         recent_active_state = raw_resume_dict.get("active_state", "")
+        id = raw_resume_dict.get('id',0)
         recent_active_time = None
         if recent_active_state:
             dt_now = datetime.now()
@@ -382,6 +389,8 @@ class Candidate:
             incharge_id=incharge_id,
             recentActiveTime=recent_active_time,
             now_region=now_region,
+            source=ENUM_CANDIDATE_CLASSIFY.MAI_MAI.value,
+            mm_uuid=id
         )
 
 
