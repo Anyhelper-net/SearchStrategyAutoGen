@@ -22,7 +22,7 @@ from src.io.anyhelper import (
 from src.config.anyhelper import ENUM_CANDIDATE_CLASSIFY
 from src.config.bot import ENUM_MODEL_ID
 from src.utils.regex_utils import RegexUtils
-
+from src.utils.logger import logger
 
 class Candidate:
     def __init__(
@@ -273,6 +273,8 @@ class Candidate:
             params["location"] = location[0]
         if tags:
             params["tags"] = tags[0]
+
+        logger.info(json.dumps(params, ensure_ascii=False))
 
         response = add_screening_resume(
             position_id=self.position_id,

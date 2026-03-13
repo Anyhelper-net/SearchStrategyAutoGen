@@ -1,8 +1,6 @@
-from src.config.maimai import FIRST_CONTACT_CANDIDATE_RESUME_KEYS
 from src.model import SearchStrategy
 from src.model.candidate import Candidate
 from src.service.lp import LpService
-import json
 from src.model.mm_strategy import MMStrategy
 from src.service.mm import MMService
 from src.utils import random_sleep
