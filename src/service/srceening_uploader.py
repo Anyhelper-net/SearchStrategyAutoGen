@@ -18,6 +18,7 @@ class ScreeningUploader:
         resumes = []
         cur_page = 0
         while True:
+            random_sleep()
             data = self.lp_service.get_resumes(self.strategy.get_lp_payload_inner(),cur_page=cur_page)
             tmp_resumes = data.get('data', {}).get('resList')
             if not tmp_resumes:
@@ -26,6 +27,7 @@ class ScreeningUploader:
             cur_page += 1
 
         for resume in resumes:
+            random_sleep()
             data = self.lp_service.get_resume_detail(resume['simpleResumeForm']['resIdEncode'])
 
             resume_detail = data['data']
