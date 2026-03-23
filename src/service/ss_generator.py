@@ -538,8 +538,8 @@ class Generator:
                     f'strategy {name} uploaded:\n {self.strategy}\n')
                 # 上传高潜
                 su = ScreeningUploader(self.strategy,self.lp_service,self.mm_service,self.zl_service)
-                # su.liepin_upload(self.pid,self.hid)
-                # su.maimai_upload(self.pid,self.hid)
+                su.liepin_upload(self.pid,self.hid)
+                su.maimai_upload(self.pid,self.hid)
                 if self.zl_service:
                     su.zhilian_upload(self.pid,self.hid)
             else:
