@@ -14,7 +14,7 @@ class ScreeningUploader:
         self.strategy:SearchStrategy = strategy
         self.mm_service:MMService = mm_service
         self.zl_service:ZlService = zl_service
-        self.limit_count = 20
+        self.limit_count = 200
 
     def liepin_upload(self,pid,hid):
         resumes = []
