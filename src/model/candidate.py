@@ -327,7 +327,7 @@ class Candidate:
         if salary:
             salary = bot_io.parse(bot_io.send(salary, ENUM_MODEL_ID.GET_CLEAN_SALARY))
 
-        now_region = base_info_dict.get("basicInfoForm").get("dqName", "")
+        now_region = base_info_dict.get("basicInfoForm",{}).get("dqName", "")
 
         raw_resume = {"base": base_info_dict, "workExp": work_exp_dict}
 
