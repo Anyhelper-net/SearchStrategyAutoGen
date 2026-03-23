@@ -19,6 +19,7 @@ import copy
 
 from src.service.mm import MMService
 from src.service.srceening_uploader import ScreeningUploader
+from src.service.zl import ZlService
 from src.utils.logger import logger
 from src.config.path import LOG_DIR
 import logging
@@ -41,7 +42,7 @@ class Generator:
     class EmptyMustStrategyException(GeneratorException):
         pass
 
-    def __init__(self,pid,lp_cookies,mm_cookies):
+    def __init__(self,pid,lp_cookies,mm_cookies,zl_cookies=None):
         self.logger = logger.getChild(f'strategy_generator_{pid}')
         handler = ConcurrentRotatingFileHandler(
             os.path.join(LOG_DIR, f'pid_{pid}.log'),
@@ -74,6 +75,10 @@ class Generator:
         self.hid = ah_io.get_ah_result_dict(ah_io.get_incharge_id_by_position_id(pid))['results'][0]['incharge_id']
 
         self.mm_service = MMService(mm_cookies)
+        if zl_cookies:
+            self.zl_service = ZlService(zl_cookies)
+        else:
+            self.zl_service = None
 
         # self._set_default_strategy()
 
@@ -532,9 +537,11 @@ class Generator:
                 self.logger.info(
                     f'strategy {name} uploaded:\n {self.strategy}\n')
                 # 上传高潜
-                su = ScreeningUploader(self.strategy,self.lp_service,self.mm_service)
-                su.liepin_upload(self.pid,self.hid)
-                su.maimai_upload(self.pid,self.hid)
+                su = ScreeningUploader(self.strategy,self.lp_service,self.mm_service,self.zl_service)
+                # su.liepin_upload(self.pid,self.hid)
+                # su.maimai_upload(self.pid,self.hid)
+                if self.zl_service:
+                    su.zhilian_upload(self.pid,self.hid)
             else:
                 self.logger.warn(resp.text)
         else:

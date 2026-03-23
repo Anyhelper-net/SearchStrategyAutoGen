@@ -1,21 +1,25 @@
 from src.model import SearchStrategy
 from src.model.candidate import Candidate
+from src.model.zl_strategy import zhilian_search_conditon
 from src.service.lp import LpService
 from src.model.mm_strategy import MMStrategy
 from src.service.mm import MMService
+from src.service.zl import ZlService
 from src.utils import random_sleep
 
 
 class ScreeningUploader:
-    def __init__(self,strategy,lp_service=None,mm_service=None):
+    def __init__(self,strategy,lp_service=None,mm_service=None,zl_service=None):
         self.lp_service:LpService = lp_service
         self.strategy:SearchStrategy = strategy
         self.mm_service:MMService = mm_service
+        self.zl_service:ZlService = zl_service
+        self.limit_count = 20
 
     def liepin_upload(self,pid,hid):
         resumes = []
         cur_page = 0
-        while True:
+        while cur_page * 30 < self.limit_count:
             random_sleep()
             data = self.lp_service.get_resumes(self.strategy.get_lp_payload_inner(),cur_page=cur_page)
             tmp_resumes = data.get('data', {}).get('resList')
@@ -25,7 +29,6 @@ class ScreeningUploader:
             cur_page += 1
 
         for resume in resumes:
-            random_sleep()
             data = self.lp_service.get_resume_detail(resume['simpleResumeForm']['resIdEncode'])
 
             resume_detail = data['data']
@@ -42,7 +45,7 @@ class ScreeningUploader:
 
             candidate.upload_screening_resume_to_anyJob()
     
-    def maimai_upload(self,pid,hid,limit_search = 1000):
+    def maimai_upload(self,pid,hid):
         lp_strategy = self.strategy.get_lp_payload_inner()
         mm_strategy = MMStrategy()
         mm_strategy.load_from_lp(lp_strategy)
@@ -52,8 +55,7 @@ class ScreeningUploader:
         if not int(total):
             return
 
-        while page_index * _PAGE_SIZE < limit_search:
-
+        while page_index * _PAGE_SIZE < self.limit_count:
             random_sleep()
             data = self.mm_service.search_candidate(mm_strategy, page_index, _PAGE_SIZE)
             mm_uids = data['all_uids']
@@ -68,6 +70,23 @@ class ScreeningUploader:
                 resume = self.mm_service.get_resume(mm_uid)['data']
                 candidate = Candidate.from_mm_raw_resume(resume,pid,hid)
                 candidate.upload_screening_resume_to_anyJob()
+
+    def zhilian_upload(self,pid,hid):
+        lp_strategy = self.strategy.get_lp_payload_inner()
+        zl_strategy = zhilian_search_conditon.from_liepin_condition(lp_strategy)
+        cur_page = 0
+        resp = self.zl_service.get_resumes(zl_strategy, cur_page=cur_page)
+        current_candidate_list = []
+        while cur_page * 20 < self.limit_count:
+            random_sleep()
+            if not resp.get("data", {}).get("list", {}):
+                break
+            response = self.zl_service.get_resumes(zl_strategy, cur_page=cur_page)
+            candidate_list = response['data']['list']
+            current_candidate_list = [*current_candidate_list, *candidate_list]
+        for resume in current_candidate_list:
+            candidate = Candidate.from_zl_raw_resume(resume, pid, hid)
+            candidate.upload_screening_resume_to_anyJob()
 
 
 

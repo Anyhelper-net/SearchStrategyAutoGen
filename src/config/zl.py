@@ -1,0 +1,1 @@
+SEARCH_RESUME = 'https://rd6.zhaopin.com/api/talent/search/list'

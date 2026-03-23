@@ -23,25 +23,27 @@ from src.config.anyhelper import ENUM_CANDIDATE_CLASSIFY
 from src.config.bot import ENUM_MODEL_ID
 from src.utils.regex_utils import RegexUtils
 from src.utils.logger import logger
+import src.io.anyhelper as ah_io
+
 
 class Candidate:
     def __init__(
-        self,
-        name,
-        currentCompany,
-        currentPosition,
-        schoolName,
-        major,
-        rawResume: str,
-        salary,
-        position_id,
-        incharge_id,
-        now_region,
-        source,
-        mm_uuid = None,
-        gold_collar=None,
-        link: str = "",
-        recentActiveTime: datetime | None = None,
+            self,
+            name,
+            currentCompany,
+            currentPosition,
+            schoolName,
+            major,
+            rawResume: str,
+            salary,
+            position_id,
+            incharge_id,
+            now_region,
+            source,
+            mm_uuid=None,
+            gold_collar=None,
+            link: str = "",
+            recentActiveTime: datetime | None = None,
     ):
         """
         execl列头
@@ -74,8 +76,8 @@ class Candidate:
         self.link = link
         self.schoolName = schoolName
         self.major = major
-        self.source =source
-        if source == ENUM_CANDIDATE_CLASSIFY.LIE_PIN.value or ENUM_CANDIDATE_CLASSIFY.LIE_PIN_GOLD.value:
+        self.source = source
+        if source == ENUM_CANDIDATE_CLASSIFY.MAI_MAI.value:
             self.liepin_keywords = f"{currentCompany} {currentPosition} {schoolName} {major}"
         else:
             self.liepin_keywords = mm_uuid
@@ -119,9 +121,7 @@ class Candidate:
         )
 
     def set_job_requirement(self):
-        self.job_requirement = get_ah_result_dict(get_job_data(self.position_id))[
-            "results"
-        ][0]["summary"]
+        self.job_requirement = get_ah_result_dict(get_job_data(self.position_id))["results"][0]["summary"]
         self.job_deep_requirement = self.job_requirement.split("深匹要求：")[1]
 
     def set_first_check(self):
@@ -174,7 +174,7 @@ class Candidate:
                 self.duplicate_position_name_list.append(duplicate_position["Position"])
 
             for index, duplicate_position_id in enumerate(
-                self.duplicate_position_id_list
+                    self.duplicate_position_id_list
             ):
                 # 如果当前上传的岗位中的人才冲突了,跳过
                 if str(duplicate_position_id) == self.position_id:
@@ -224,13 +224,13 @@ class Candidate:
             if self.is_duplicate:
                 if self.duplicate_position_name_list:
                     comment = (
-                        f"重复：{'，'.join(self.duplicate_position_name_list)}"
-                        + "，"
-                        + f"{self.fact_check_comment}"
+                            f"重复：{'，'.join(self.duplicate_position_name_list)}"
+                            + "，"
+                            + f"{self.fact_check_comment}"
                     )
                 else:
                     comment = (
-                        "重复：但是无具体岗位" + "，" + f"{self.fact_check_comment}"
+                            "重复：但是无具体岗位" + "，" + f"{self.fact_check_comment}"
                     )
             else:
                 comment = f"{self.fact_check_comment_label}，{'，'.join(self.fact_check_comment.split('，')[3:])}"
@@ -287,7 +287,7 @@ class Candidate:
 
     @classmethod
     def from_lp_raw_resume(
-        cls, base_info_dict, work_exp_dict, position_id, incharge_id=None
+            cls, base_info_dict, work_exp_dict, position_id, incharge_id=None
     ):
         """
         base_info_dict : 第一个 JSON 的 data 字段
@@ -295,7 +295,7 @@ class Candidate:
         """
 
         name = base_info_dict.get("showName", "") or ""
-        elite = base_info_dict.get('elite',False)
+        elite = base_info_dict.get('elite', False)
 
         active_time_str = base_info_dict.get("activeTime")  # "2025/12/10"
         recentActiveTime = None
@@ -362,7 +362,7 @@ class Candidate:
         major = raw_resume_dict.get("major", "")
         salary = raw_resume_dict.get("job_preferences", {}).get("salary", "")
         recent_active_state = raw_resume_dict.get("active_state", "")
-        id = raw_resume_dict.get('id',0)
+        id = raw_resume_dict.get('id', 0)
         recent_active_time = None
         if recent_active_state:
             dt_now = datetime.now()
@@ -393,6 +393,62 @@ class Candidate:
             now_region=now_region,
             source=ENUM_CANDIDATE_CLASSIFY.MAI_MAI.value,
             mm_uuid=id
+        )
+
+    @classmethod
+    def from_zl_raw_resume(cls, raw_resume_dict, position_id, incharge_id=None):
+        data = raw_resume_dict
+        user = data.get('user', {})
+        resume = data.get('resume', {})
+
+        # 安全获取列表中第一个元素，否则返回空字典
+        work_exps = resume.get('workExperiences') or []
+        edu_exps = resume.get('educationExperiences') or []
+        purposes = resume.get('purposes') or []
+
+        work = work_exps[0] if len(work_exps) > 0 else {}
+        edu = edu_exps[0] if len(edu_exps) > 0 else {}
+        purpose = purposes[0] if len(purposes) > 0 else {}
+
+        # 安全提取字段（不存在则置空字符串）
+        name = user.get('name', '')
+        currentCompany = work.get('orgName', '')
+        currentPosition = work.get('jobTitle', '')
+        schoolName = edu.get('schoolName', '')
+        major = edu.get('major', '')
+        salary = purpose.get('salaryLabel', '')
+        if salary:
+            salary = bot_io.send(salary, ENUM_MODEL_ID.GET_CLEAN_SALARY.value)
+        now_region = user.get('cityName', '')
+
+        # 最近活跃时间（可能不存在）
+        last_active_time = user.get('lastActiveTime')
+        recentActiveTime = None
+        if last_active_time:
+            try:
+                recentActiveTime = datetime.fromtimestamp(last_active_time / 1000)
+            except Exception:
+                recentActiveTime = None
+
+        if incharge_id:
+            incharge_id = incharge_id
+        else:
+            resp = ah_io.get_incharge_id_by_position_id(position_id)
+            data = ah_io.get_ah_result_dict(resp)
+            incharge_id = get_ah_result_dict(data['results'][0]['incharge_id'])
+
+        return cls(
+            name=name,
+            currentCompany=currentCompany,
+            currentPosition=currentPosition,
+            schoolName=schoolName,
+            major=major,
+            rawResume=json.dumps(raw_resume_dict, ensure_ascii=False),
+            salary=salary,
+            position_id=position_id,
+            incharge_id=incharge_id,
+            recentActiveTime=recentActiveTime,
+            now_region=now_region
         )
 
 
