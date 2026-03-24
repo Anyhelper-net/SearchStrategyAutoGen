@@ -5,6 +5,7 @@
 @author  : duke
 """
 import json
+from copy import deepcopy
 from enum import Enum
 import os
 from concurrent_log_handler import ConcurrentRotatingFileHandler
@@ -79,6 +80,8 @@ class Generator:
             self.zl_service = ZlService(zl_cookies)
         else:
             self.zl_service = None
+
+        self.strategies = []
 
         # self._set_default_strategy()
 
@@ -536,16 +539,20 @@ class Generator:
             if resp.ok:
                 self.logger.info(
                     f'strategy {name} uploaded:\n {self.strategy}\n')
-                # 上传高潜
-                su = ScreeningUploader(self.strategy,self.lp_service,self.mm_service,self.zl_service)
-                su.liepin_upload(self.pid,self.hid)
-                su.maimai_upload(self.pid,self.hid)
-                if self.zl_service:
-                    su.zhilian_upload(self.pid,self.hid)
+                self.strategies.append(deepcopy(self.strategy))
             else:
                 self.logger.warn(resp.text)
         else:
             self.logger.warn('got no candidate')
+
+    def _upload_screening(self):
+        for strategy in self.strategies:
+            su = ScreeningUploader(strategy,self.lp_service,self.mm_service,self.zl_service)
+            su.liepin_upload(self.pid, self.hid)
+            su.maimai_upload(self.pid, self.hid)
+            if self.zl_service:
+                su.zhilian_upload(self.pid, self.hid)
+
 
     def _remove_current_keywords(self):
         to_be_removed_keywords = self.strategy.e_options['keywords'].value().split()
@@ -649,6 +656,8 @@ class Generator:
                 self._upload_strategy('comp')
             except self.GeneratorException as e:
                 self.logger.warn(e)
+
+        self._upload_screening()
 
     @staticmethod
     def _react_brain_communication(l, r, t, history):
