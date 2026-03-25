@@ -5,7 +5,6 @@
 @author  : duke
 """
 import json
-
 from src.io.mm import MMProxy
 from src.model.mm_user import MMUser
 from src.model.mm_job import MMJob
