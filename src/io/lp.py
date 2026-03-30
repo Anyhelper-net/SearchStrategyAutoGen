@@ -4,17 +4,13 @@
 @time    : 2025/11/28 下午12:54
 @author  : duke
 """
-import json
 import time
-import hashlib
 import requests
-import re
 import uuid
 
 from selenium.webdriver.chrome.options import Options
 
-from src.config.lp import TEMP_LP_HEADERS, TEMP_LP_HEADERS_HOME, PATTERN_LP_HOME_JS, PATTERN_LP_CLIENT_ID, \
-    API_LP_SEARCH_RESUMES, API_LP_HOME, API_LP_GET_RESUME_DETAIL, API_LP_GET_RESUME_WORK_EXP, API_LP_GET_RISK_CHAT_INFO
+from src.config.lp import *
 from copy import deepcopy
 from src.utils.decorator import http_retry
 from src.config.http import HTTP_TIME_OUT_LP, HTTP_RETRY_GAP, HTTP_RETRY_TIMES
