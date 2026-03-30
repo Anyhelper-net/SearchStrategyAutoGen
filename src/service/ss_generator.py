@@ -359,24 +359,26 @@ class Generator:
                         current = trial
                         accepted = True
                         break
-                    if (best_over_limit is None and r < self.strategy.count) or (
-                            r < self.strategy.count < best_over_limit[0]):
-                        best_over_limit = (self.strategy.count, trial)
-                    if (best_less_limit is None and self.strategy.count < l) or (
-                            best_less_limit[0] < self.strategy.count < l):
-                        best_less_limit = (self.strategy.count, trial)
+                    if self.strategy.count > r:
+                        if best_over_limit is None or self.strategy.count < best_over_limit[0]:
+                            best_over_limit = (self.strategy.count, trial)
+                    elif self.strategy.count < l:
+                        if best_less_limit is None or best_less_limit[0] < self.strategy.count:
+                            best_less_limit = (self.strategy.count, trial)
                 if not accepted:
                     if best_over_limit is None or best_less_limit is None:
                         self.logger.warn(f'b rare strategy single no usable keyword in group {group.tier.tp}, skip')
                         continue
                     if l - best_less_limit[0] < best_over_limit[0] - r:
                         kw = best_over_limit[1]
-                        keywords_map[kw] = self.strategy.count
+                        keywords_map[kw] = best_over_limit[0]
+                        current = kw
                         self.logger.info(
                             f"b rare strategy single all keywords over r,use minimal one <{kw}> count={best_over_limit[0]}")
                     else:
                         kw = best_less_limit[1]
-                        keywords_map[kw] = self.strategy.count
+                        keywords_map[kw] = best_less_limit[0]
+                        current = kw
                         self.logger.info(
                             f"b rare strategy single all keywords less r,use maximal one <{kw}> count={best_less_limit[0]}")
         if keywords_map:
@@ -546,8 +548,8 @@ class Generator:
             self.logger.warn('got no candidate')
 
     def _upload_screening(self):
-        for strategy in self.strategies:
-            su = ScreeningUploader(strategy,self.lp_service,self.mm_service,self.zl_service)
+        for _strategy in self.strategies:
+            su = ScreeningUploader(_strategy,self.lp_service,self.mm_service,self.zl_service)
             su.liepin_upload(self.pid, self.hid)
             su.maimai_upload(self.pid, self.hid)
             if self.zl_service:
@@ -634,6 +636,7 @@ class Generator:
         if total_count < 400:
             self.strategy.filter_viewed = True
         else:
+            self._upload_screening()
             return
 
         # cores strategy
