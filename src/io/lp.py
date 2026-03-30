@@ -86,7 +86,7 @@ class LpUserProxy:
         return requests.post(API_LP_GET_RESUME_DETAIL, headers=self._get_headers(), cookies=self.cookies_name_val_dict,
                              data=payload, timeout=HTTP_TIME_OUT_LP)
 
-    @http_retry()
+    @http_retry(HTTP_RETRY_TIMES,HTTP_RETRY_GAP)
     def get_risk_resume_info(self,resId):
         payload = f'resId={resId}'
 
