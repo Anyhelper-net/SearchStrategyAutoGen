@@ -27,9 +27,7 @@ class ScreeningUploader:
             for resume in tmp_resumes:
                 data = self.lp_service.get_resume_detail(resume['simpleResumeForm']['resIdEncode'])
                 resume_detail = data['data']
-                data = self.lp_service.get_work_exp(resume_detail.get('basicInfoForm', {}).get('resJobtitle'),resume['simpleResumeForm']['resIdEncode'])
-                resume_work_exp = data.get('data', {})
-                candidate = Candidate.from_lp_raw_resume(resume_detail, resume_work_exp, pid, hid)
+                candidate = Candidate.from_lp_raw_resume(resume_detail, pid, hid)
                 if resume_detail.get('goldUser', False):
                     candidate.gold_collar = True
                 candidate.upload_screening_resume_to_anyJob()

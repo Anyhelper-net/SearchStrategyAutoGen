@@ -14,7 +14,7 @@ import uuid
 from selenium.webdriver.chrome.options import Options
 
 from src.config.lp import TEMP_LP_HEADERS, TEMP_LP_HEADERS_HOME, PATTERN_LP_HOME_JS, PATTERN_LP_CLIENT_ID, \
-    API_LP_SEARCH_RESUMES, API_LP_HOME, API_LP_GET_RESUME_DETAIL, API_LP_GET_RESUME_WORK_EXP
+    API_LP_SEARCH_RESUMES, API_LP_HOME, API_LP_GET_RESUME_DETAIL, API_LP_GET_RESUME_WORK_EXP, API_LP_GET_RISK_CHAT_INFO
 from copy import deepcopy
 from src.utils.decorator import http_retry
 from src.config.http import HTTP_TIME_OUT_LP, HTTP_RETRY_GAP, HTTP_RETRY_TIMES
@@ -90,23 +90,12 @@ class LpUserProxy:
         return requests.post(API_LP_GET_RESUME_DETAIL, headers=self._get_headers(), cookies=self.cookies_name_val_dict,
                              data=payload, timeout=HTTP_TIME_OUT_LP)
 
-    @http_retry(HTTP_RETRY_TIMES, HTTP_RETRY_GAP)
-    def get_work_exp(self, code, encodeResId):
+    @http_retry()
+    def get_risk_resume_info(self,resId):
+        payload = f'resId={resId}'
 
-        hashlib_value = hashlib.md5(f"{encodeResId}".encode()).hexdigest()
-
-        payload = {
-            'code': code,
-            'v': 1.4,
-            'r': hashlib_value[0:5] + hashlib_value[0:7],
-            'resIdEncode': encodeResId
-        }
-
-        payload = self._get_payload(payload)
-
-        return requests.post(API_LP_GET_RESUME_WORK_EXP, headers=self._get_headers(),
-                             cookies=self.cookies_name_val_dict,
-                             data=payload, timeout=HTTP_TIME_OUT_LP)
+        return  requests.post(API_LP_GET_RISK_CHAT_INFO,headers=self._get_headers(),cookies=self.cookies_name_val_dict,
+                              data=payload,timeout=HTTP_TIME_OUT_LP)
 
     def human_robot_verification(self):
         chrome_options = Options()

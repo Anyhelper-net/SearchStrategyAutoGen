@@ -65,7 +65,7 @@ with open(LP_INDUSTRY_CODE_PATH, 'r', encoding='utf=8') as f:
 API_LP_SEARCH_RESUMES = 'https://api-h.liepin.com/api/com.liepin.searchfront4r.h.search-resumes'
 API_LP_HOME = 'https://h.liepin.com/certification/home'
 API_LP_GET_RESUME_DETAIL = 'https://api-h.liepin.com/api/com.liepin.rresume.userh.pc.old.get-resume-detail'
-API_LP_GET_RESUME_WORK_EXP = 'https://api-h.liepin.com/api/com.liepin.rresume.userh.pc.old.get-work-exps'
+API_LP_GET_RISK_CHAT_INFO = 'https://api-h.liepin.com/api/com.liepin.rresume.userh.pc.risk-chat-guide-info'
 PATTERN_LP_HOME_JS = re.compile(r'//concat\.lietou-static\.com/fe-h2-pc/v6/js/polyfill-vendors\..*?\.js')
 PATTERN_LP_CLIENT_ID = re.compile(r'__FE_CLIENT_ID="(\d+)"')
 

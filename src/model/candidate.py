@@ -287,7 +287,7 @@ class Candidate:
 
     @classmethod
     def from_lp_raw_resume(
-            cls, base_info_dict, work_exp_dict, position_id, incharge_id=None
+            cls, base_info_dict, position_id, incharge_id=None
     ):
         """
         base_info_dict : 第一个 JSON 的 data 字段
@@ -308,7 +308,7 @@ class Candidate:
             except Exception:
                 recentActiveTime = None
 
-        work_list = work_exp_dict if isinstance(work_exp_dict, list) else []
+        work_list = base_info_dict.get("workExpFormList",[])
         first_work = work_list[0] if len(work_list) > 0 else {}
 
         currentCompany = first_work.get("rwCompname", "") or ""
@@ -329,7 +329,7 @@ class Candidate:
 
         now_region = base_info_dict.get("basicInfoForm",{}).get("dqName", "")
 
-        raw_resume = {"base": base_info_dict, "workExp": work_exp_dict}
+        raw_resume = {"base": base_info_dict,}
 
         raw_resume_str = json.dumps(raw_resume, ensure_ascii=False)
 

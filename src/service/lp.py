@@ -56,18 +56,8 @@ class LpService:
         for _ in range(retry + 1):
             random_sleep(LP_RANDOM_SLEEP_RANGE)
             resp = self.proxy.get_resume_detail(encodeResId)
-            data = resp.json()
-            try:
-                return data
-            except Exception:
-                if resp.text == '{"flag":0}':
-                    raise LpService.LpHumanRobotVerification(resp)
-                else:
-                    raise LpService.LpServiceException(resp)
-    def get_work_exp(self,code,encodeResId,retry = 1):
-        for _ in range(retry + 1):
-            random_sleep(LP_RANDOM_SLEEP_RANGE)
-            resp = self.proxy.get_work_exp(code,encodeResId)
+            # 下面这个仅作为人机验证防护
+            self.proxy.get_risk_resume_info(encodeResId)
             data = resp.json()
             try:
                 return data
