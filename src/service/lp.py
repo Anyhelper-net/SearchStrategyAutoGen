@@ -40,6 +40,7 @@ class LpService:
                     raise LpService.LpHumanRobotVerification(resp)
                 else:
                     raise LpService.LpServiceException(resp)
+
     def get_resumes(self,inner_payload,cur_page = 0,retry=1):
         for _ in range(retry + 1):
             random_sleep(LP_RANDOM_SLEEP_RANGE)
@@ -52,6 +53,7 @@ class LpService:
                     raise LpService.LpHumanRobotVerification(resp)
                 else:
                     raise LpService.LpServiceException(resp)
+
     def get_resume_detail(self, encodeResId,retry=1):
         for _ in range(retry + 1):
             random_sleep(LP_RANDOM_SLEEP_RANGE)
