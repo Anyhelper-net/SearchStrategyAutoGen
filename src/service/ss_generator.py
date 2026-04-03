@@ -548,12 +548,35 @@ class Generator:
             self.logger.warn('got no candidate')
 
     def _upload_screening(self):
+        lp_plate_count = 0
+        mm_plate_count = 0
+        zl_plate_count = 0
+
         for _strategy in self.strategies:
-            su = ScreeningUploader(_strategy,self.lp_service,self.mm_service,self.zl_service)
+            su = ScreeningUploader(
+                _strategy,
+                self.lp_service,
+                self.mm_service,
+                self.zl_service,
+                lp_plate_count=lp_plate_count,
+                mm_plate_count=mm_plate_count,
+                zl_plate_count=zl_plate_count,
+            )
             su.liepin_upload(self.pid, self.hid)
             su.maimai_upload(self.pid, self.hid)
             if self.zl_service:
                 su.zhilian_upload(self.pid, self.hid)
+
+            lp_plate_count = su.lp_plate_count
+            mm_plate_count = su.mm_plate_count
+            zl_plate_count = su.zl_plate_count
+
+            plate_counts = [lp_plate_count, mm_plate_count]
+            if self.zl_service:
+                plate_counts.append(zl_plate_count)
+
+            if all(count >= su.plate_limit_count for count in plate_counts):
+                break
 
 
     def _remove_current_keywords(self):
