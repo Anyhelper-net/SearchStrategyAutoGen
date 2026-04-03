@@ -34,6 +34,6 @@ class ZlProxy:
             "experiment": ""
         }
         payload.update(kwargs)
-        response = requests.post(url, cookies=self.cookies, json=payload)
+        response = requests.post(url, cookies=self.cookies_name_val_dict, json=payload)
         return response
 
